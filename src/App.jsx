@@ -18,7 +18,10 @@ export default function App() {
     if (!token) { setChecking(false); return; }
     api.getStats()
       .then(() => { setAuthed(true); setAdminUser('MI Admin'); })
-      .catch(() => { localStorage.removeItem('admin_token'); })
+      .catch(() => {
+        // Token invalid or backend unreachable — clear stale token, go to login
+        localStorage.removeItem('admin_token');
+      })
       .finally(() => setChecking(false));
   }, []);
 

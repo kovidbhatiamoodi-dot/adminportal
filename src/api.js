@@ -9,8 +9,32 @@ const headers = (extra = {}) => ({
 });
 
 const handleResponse = async (res) => {
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.message || 'Request failed');
+  const contentType = res.headers.get('content-type') || '';
+
+  // If the server returned HTML (e.g. Vite proxy error page, Express 404 HTML),
+  // do NOT try to parse it as JSON — give a clean error instead.
+  if (!contentType.includes('application/json')) {
+    if (!res.ok) {
+      // Try to get the status text for context
+      throw new Error(
+        res.status === 0
+          ? 'Cannot reach backend — make sure the server is running on port 5056'
+          : `Server returned ${res.status} (${res.statusText || 'non-JSON response'}) — backend may not be running`
+      );
+    }
+    // Unlikely but handle 2xx non-JSON gracefully
+    return null;
+  }
+
+  // Safe JSON parse
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error('Server returned an invalid response — backend may not be running');
+  }
+
+  if (!res.ok) throw new Error(json.message || `Request failed (${res.status})`);
   return json.data;
 };
 
@@ -40,8 +64,12 @@ export const api = {
   exportAllUsers: async () => {
     const res = await fetch(`${BASE_URL}/users/export`, { headers: headers() });
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      throw new Error(json.message || 'Export failed');
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.message || 'Export failed');
+      }
+      throw new Error(`Export failed (${res.status}) — backend may not be running`);
     }
     return res.blob();
   },
