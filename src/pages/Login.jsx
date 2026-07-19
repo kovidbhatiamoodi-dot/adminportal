@@ -15,7 +15,7 @@ export default function Login({ onLogin }) {
     try {
       const data = await api.login(username, password);
       localStorage.setItem('admin_token', data.token);
-      onLogin(data.username);
+      onLogin(data);
     } catch (err) {
       setError(err.message || 'Invalid credentials');
     } finally {
