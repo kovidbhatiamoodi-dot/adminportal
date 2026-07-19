@@ -18,10 +18,7 @@ export default function App() {
     if (!token) { setChecking(false); return; }
     api.getStats()
       .then(() => { setAuthed(true); setAdminUser('MI Admin'); })
-      .catch(() => {
-        // Token invalid or backend unreachable — clear stale token, go to login
-        localStorage.removeItem('admin_token');
-      })
+      .catch(() => { localStorage.removeItem('admin_token'); })
       .finally(() => setChecking(false));
   }, []);
 
@@ -33,9 +30,10 @@ export default function App() {
       .catch(() => {});
   }, [authed]);
 
-  const handleLogin = (username) => {
+  const handleLogin = (data) => {
     setAuthed(true);
-    setAdminUser(username);
+    setAdminUser(data.username);
+    localStorage.setItem('admin_token', data.token);
   };
 
   const handleLogout = () => {
