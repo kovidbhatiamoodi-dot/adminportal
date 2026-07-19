@@ -1,4 +1,19 @@
-const BASE_URL = '/api/v1/admin';
+const getAdminApiBaseUrl = () => {
+  const explicitBaseUrl =
+    import.meta.env.VITE_ADMIN_API_URL?.trim() ||
+    import.meta.env.VITE_BACKEND_URL?.trim();
+
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/$/, '');
+  }
+
+  return import.meta.env.DEV
+    ? 'http://localhost:5056'
+    : 'https://ultronbrain.moodi.org';
+};
+
+const API_BASE_URL = getAdminApiBaseUrl();
+const BASE_URL = API_BASE_URL ? `${API_BASE_URL}/api/v1/admin` : '/api/v1/admin';
 
 const getToken = () => localStorage.getItem('admin_token');
 
