@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Threads from './pages/Threads';
+import Tasks from './pages/Tasks';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -74,7 +75,7 @@ export default function App() {
         <div className="sticky top-0 z-40 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/[0.06] px-8 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-medium text-white capitalize">
-              {activePage === 'dashboard' ? '📊 Dashboard' : activePage === 'users' ? '👥 Registrations' : '💬 Thread Moderation'}
+              {activePage === 'dashboard' ? '📊 Dashboard' : activePage === 'users' ? '👥 Registrations' : activePage === 'tasks' ? '✅ Tasks' : '💬 Thread Moderation'}
             </h2>
             <p className="text-xs text-slate-500">CCP 2026 · Moodi Indigo Admin</p>
           </div>
@@ -88,6 +89,7 @@ export default function App() {
         <div className="px-8 py-8">
           {activePage === 'dashboard' && <Dashboard />}
           {activePage === 'users' && <Dashboard />}
+          {activePage === 'tasks' && <Tasks />}
           {activePage === 'threads' && (
             <Threads onPendingCountChange={setPendingCount} />
           )}

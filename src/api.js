@@ -105,4 +105,23 @@ export const api = {
       headers: headers(),
       body: JSON.stringify({ status }),
     }).then(handleResponse),
+
+  getTasks: () =>
+    fetch(`${BASE_URL}/tasks`, { headers: headers() }).then(handleResponse),
+
+  getTaskGenres: () =>
+    fetch(`${BASE_URL}/tasks/genres`, { headers: headers() }).then(handleResponse),
+
+  createTask: (task) =>
+    fetch(`${BASE_URL}/tasks`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify(task),
+    }).then(handleResponse),
+
+  deleteTask: (taskId) =>
+    fetch(`${BASE_URL}/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers: headers(),
+    }).then(handleResponse),
 };
