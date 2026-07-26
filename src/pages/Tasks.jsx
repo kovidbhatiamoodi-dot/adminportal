@@ -199,21 +199,24 @@ function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Genre / Club</label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Genre</label>
             <select
               value={form.club}
               onChange={(e) => update('club', e.target.value)}
               className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
             >
-              <option value="" className="bg-[#111118]">None (global)</option>
+              <option value="" className="bg-[#111118]">Global (no specific genre)</option>
               {genres.map((g) => (
                 <option key={g._id} value={g._id} className="bg-[#111118]">{g.name}</option>
               ))}
             </select>
+            <p className="mt-1.5 text-xs text-slate-500">
+              Global tasks always show in the list next to the genre cards.
+            </p>
           </div>
 
-          <div className="sm:col-span-2">
-            <div className="flex items-center gap-2">
+          <div>
+            <div className="flex items-center gap-2 pt-6">
               <input
                 type="checkbox"
                 id="pinned"
@@ -221,13 +224,13 @@ function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
                 onChange={(e) => update('pinned', e.target.checked)}
                 className="w-4 h-4 rounded border-white/20 bg-white/[0.04] accent-indigo-600"
               />
-              <label htmlFor="pinned" className="text-sm text-slate-300">Pin to top of page</label>
+              <label htmlFor="pinned" className="text-sm text-slate-300">Pin to top</label>
             </div>
-            {form.pinned && form.club && (
-              <p className="mt-1.5 text-xs text-indigo-300/80">
-                This is now a "common" task — pinned globally at the top, and also shown inside its genre below.
-              </p>
-            )}
+            <p className="mt-1.5 text-xs text-slate-500">
+              {form.club
+                ? 'Also show this at the top of the global list, in addition to its genre.'
+                : 'Puts it at the very top of the global list, ahead of other global tasks.'}
+            </p>
           </div>
 
           {form.type !== 'referral' && (
