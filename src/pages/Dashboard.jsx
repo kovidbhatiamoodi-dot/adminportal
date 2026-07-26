@@ -16,8 +16,10 @@ const CSV_FIELDS = [
   { key: 'college',          label: 'College' },
   { key: 'stream',           label: 'Stream' },
   { key: 'year_of_study',    label: 'Year of Study' },
+  { key: 'por',              label: 'Position of Responsibility' },
   { key: 'totalpoints',      label: 'Total Points' },
   { key: 'referral_code',    label: 'Referral Code' },
+  { key: 'referred_by',      label: 'Referred By' },
   { key: 'instagram_handle', label: 'Instagram' },
   { key: 'createdAt',        label: 'Registered At' },
 ];
@@ -35,6 +37,9 @@ const buildCSV = (users) => {
       const val = u[f.key];
       if (f.key === 'dob' || f.key === 'createdAt') {
         return escapeCSV(val ? new Date(val).toISOString().split('T')[0] : '');
+      }
+      if (f.key === 'referred_by') {
+        return escapeCSV(val ? `${val.full_name} (${val.mi_no})` : '');
       }
       return escapeCSV(val);
     }).join(',')
@@ -312,7 +317,7 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.05]">
-                  {['#', 'MI No', 'Name', 'Email', 'Phone', 'College', 'State', 'Yr', 'Gender', 'Points', 'Joined'].map((col) => (
+                  {['#', 'MI No', 'Name', 'Email', 'Phone', 'College', 'POR', 'State', 'Yr', 'Gender', 'Points', 'Referred By', 'Joined'].map((col) => (
                     <th key={col} className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap first:pl-6 last:pr-6">
                       {col}
                     </th>
@@ -339,6 +344,7 @@ export default function Dashboard() {
                     <td className="px-4 py-3 text-slate-300 text-xs whitespace-nowrap">{user.email}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">{user.phone_no}</td>
                     <td className="px-4 py-3 text-slate-300 text-xs max-w-[140px] truncate" title={user.college}>{user.college}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs max-w-[120px] truncate" title={user.por}>{user.por || '—'}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">{user.state}</td>
                     <td className="px-4 py-3 text-slate-400 text-xs text-center">{user.year_of_study}</td>
                     <td className="px-4 py-3">
@@ -346,6 +352,13 @@ export default function Dashboard() {
                     </td>
                     <td className="px-4 py-3">
                       <PointsEditor user={user} onPointsUpdated={handlePointsUpdated} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
+                      {user.referred_by ? (
+                        <span title={user.referred_by.referral_code}>
+                          {user.referred_by.full_name}
+                        </span>
+                      ) : '—'}
                     </td>
                     <td className="px-4 py-3 pr-6 text-slate-500 text-xs whitespace-nowrap">
                       {new Date(user.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}

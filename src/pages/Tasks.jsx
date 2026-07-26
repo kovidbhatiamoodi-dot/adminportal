@@ -6,14 +6,23 @@ const TYPE_STYLES = {
   referral: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
 };
 
+const LINK_TYPE_LABELS = {
+  drive: 'Google Drive',
+  linkedin: 'LinkedIn',
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+};
+
 const emptyForm = {
   title: '',
   description: '',
   points: 0,
+  pointsDiffCollege: 0,
   club: '',
   pinned: false,
   type: 'standard',
   requiresLink: false,
+  linkType: 'drive',
 };
 
 function CreateTaskForm({ genres, onCreated }) {
@@ -38,10 +47,12 @@ function CreateTaskForm({ genres, onCreated }) {
         title: form.title.trim(),
         description: form.description.trim(),
         points: Number(form.points) || 0,
+        points_diff_college: form.type === 'referral' ? Number(form.pointsDiffCollege) || 0 : 0,
         club: form.club || null,
         pinned: form.pinned,
         type: form.type,
-        requiresLink: form.requiresLink,
+        requiresLink: form.type === 'referral' ? false : form.requiresLink,
+        linkType: form.linkType,
       });
       onCreated(task);
       setForm(emptyForm);
@@ -107,16 +118,41 @@ function CreateTaskForm({ genres, onCreated }) {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Points</label>
-            <input
-              type="number"
-              min="0"
-              value={form.points}
-              onChange={(e) => update('points', e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
-            />
-          </div>
+          {form.type === 'referral' ? (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Points — Same College</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.points}
+                  onChange={(e) => update('points', e.target.value)}
+                  className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Points — Different College</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.pointsDiffCollege}
+                  onChange={(e) => update('pointsDiffCollege', e.target.value)}
+                  className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                />
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Points</label>
+              <input
+                type="number"
+                min="0"
+                value={form.points}
+                onChange={(e) => update('points', e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Type</label>
@@ -155,16 +191,35 @@ function CreateTaskForm({ genres, onCreated }) {
             <label htmlFor="pinned" className="text-sm text-slate-300">Pin to top of page</label>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="requiresLink"
-              checked={form.requiresLink}
-              onChange={(e) => update('requiresLink', e.target.checked)}
-              className="w-4 h-4 rounded border-white/20 bg-white/[0.04] accent-indigo-600"
-            />
-            <label htmlFor="requiresLink" className="text-sm text-slate-300">Require Drive link submission</label>
-          </div>
+          {form.type !== 'referral' && (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="requiresLink"
+                  checked={form.requiresLink}
+                  onChange={(e) => update('requiresLink', e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-white/[0.04] accent-indigo-600"
+                />
+                <label htmlFor="requiresLink" className="text-sm text-slate-300">Require proof link submission</label>
+              </div>
+
+              {form.requiresLink && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Link type</label>
+                  <select
+                    value={form.linkType}
+                    onChange={(e) => update('linkType', e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/10 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                  >
+                    {Object.entries(LINK_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value} className="bg-[#111118]">{label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
@@ -295,7 +350,11 @@ export default function Tasks() {
                         {task.type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-indigo-300 text-sm font-semibold tabular-nums">{task.points}</td>
+                    <td className="px-4 py-3 text-indigo-300 text-sm font-semibold tabular-nums">
+                      {task.type === 'referral'
+                        ? `${task.points} / ${task.points_diff_college ?? 0}`
+                        : task.points}
+                    </td>
                     <td className="px-4 py-3">
                       {task.pinned ? (
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30">Pinned</span>
@@ -305,7 +364,9 @@ export default function Tasks() {
                     </td>
                     <td className="px-4 py-3">
                       {task.requiresLink ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">Drive link</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                          {LINK_TYPE_LABELS[task.linkType] ?? LINK_TYPE_LABELS.drive}
+                        </span>
                       ) : (
                         <span className="text-slate-600 text-xs">—</span>
                       )}

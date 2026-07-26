@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Threads from './pages/Threads';
 import Tasks from './pages/Tasks';
+import TaskSubmissions from './pages/TaskSubmissions';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -11,6 +12,7 @@ export default function App() {
   const [adminUser, setAdminUser]   = useState('');
   const [activePage, setActivePage] = useState('dashboard');
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0);
   const [checking, setChecking]     = useState(true);
 
   // On mount: check if a stored token is still valid by hitting /stats
@@ -28,6 +30,14 @@ export default function App() {
     if (!authed) return;
     api.getAllThreads(1, 'pending')
       .then((data) => setPendingCount(data.totalDocs ?? 0))
+      .catch(() => {});
+  }, [authed]);
+
+  // Fetch pending task submissions count for sidebar badge
+  useEffect(() => {
+    if (!authed) return;
+    api.getTaskSubmissions(1, 'pending')
+      .then((data) => setPendingSubmissionsCount(data.totalDocs ?? 0))
       .catch(() => {});
   }, [authed]);
 
@@ -67,6 +77,7 @@ export default function App() {
         setActive={setActivePage}
         onLogout={handleLogout}
         pendingCount={pendingCount}
+        pendingSubmissionsCount={pendingSubmissionsCount}
       />
 
       {/* Main content */}
@@ -75,7 +86,11 @@ export default function App() {
         <div className="sticky top-0 z-40 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/[0.06] px-8 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-medium text-white capitalize">
-              {activePage === 'dashboard' ? '📊 Dashboard' : activePage === 'users' ? '👥 Registrations' : activePage === 'tasks' ? '✅ Tasks' : '💬 Thread Moderation'}
+              {activePage === 'dashboard' ? '📊 Dashboard'
+                : activePage === 'users' ? '👥 Registrations'
+                : activePage === 'tasks' ? '✅ Tasks'
+                : activePage === 'submissions' ? '📥 Task Submissions'
+                : '💬 Thread Moderation'}
             </h2>
             <p className="text-xs text-slate-500">CCP 2026 · Moodi Indigo Admin</p>
           </div>
@@ -90,6 +105,9 @@ export default function App() {
           {activePage === 'dashboard' && <Dashboard />}
           {activePage === 'users' && <Dashboard />}
           {activePage === 'tasks' && <Tasks />}
+          {activePage === 'submissions' && (
+            <TaskSubmissions onPendingCountChange={setPendingSubmissionsCount} />
+          )}
           {activePage === 'threads' && (
             <Threads onPendingCountChange={setPendingCount} />
           )}

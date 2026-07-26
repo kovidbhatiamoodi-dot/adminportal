@@ -124,4 +124,16 @@ export const api = {
       method: 'DELETE',
       headers: headers(),
     }).then(handleResponse),
+
+  getTaskSubmissions: (page = 1, status = '') =>
+    fetch(`${BASE_URL}/task-submissions?page=${page}&limit=20&status=${status}`, {
+      headers: headers(),
+    }).then(handleResponse),
+
+  updateTaskSubmissionStatus: (submissionId, status) =>
+    fetch(`${BASE_URL}/task-submissions/${submissionId}/status`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ status }),
+    }).then(handleResponse),
 };

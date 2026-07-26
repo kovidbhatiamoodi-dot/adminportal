@@ -35,9 +35,18 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    id: 'submissions',
+    label: 'Task Submissions',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
 ];
 
-export default function Sidebar({ active, setActive, onLogout, pendingCount }) {
+export default function Sidebar({ active, setActive, onLogout, pendingCount, pendingSubmissionsCount }) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#111118] border-r border-white/[0.07] flex flex-col z-50">
       {/* Logo */}
@@ -77,6 +86,11 @@ export default function Sidebar({ active, setActive, onLogout, pendingCount }) {
               {item.id === 'threads' && pendingCount > 0 && (
                 <span className="ml-auto bg-amber-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                   {pendingCount > 9 ? '9+' : pendingCount}
+                </span>
+              )}
+              {item.id === 'submissions' && pendingSubmissionsCount > 0 && (
+                <span className="ml-auto bg-amber-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {pendingSubmissionsCount > 9 ? '9+' : pendingSubmissionsCount}
                 </span>
               )}
               {isActive && (
