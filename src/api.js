@@ -119,6 +119,13 @@ export const api = {
       body: JSON.stringify(task),
     }).then(handleResponse),
 
+  updateTask: (taskId, task) =>
+    fetch(`${BASE_URL}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify(task),
+    }).then(handleResponse),
+
   deleteTask: (taskId) =>
     fetch(`${BASE_URL}/tasks/${taskId}`, {
       method: 'DELETE',

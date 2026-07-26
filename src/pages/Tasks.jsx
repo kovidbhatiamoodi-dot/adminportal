@@ -25,13 +25,39 @@ const emptyForm = {
   linkType: 'drive',
 };
 
-function CreateTaskForm({ genres, onCreated }) {
+function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
 
+  const isEditing = !!editingTask;
+
+  useEffect(() => {
+    if (!editingTask) return;
+    setForm({
+      title: editingTask.title || '',
+      description: editingTask.description || '',
+      points: editingTask.points ?? 0,
+      pointsDiffCollege: editingTask.points_diff_college ?? 0,
+      club: editingTask.club?._id || editingTask.club || '',
+      pinned: !!editingTask.pinned,
+      type: editingTask.type || 'standard',
+      requiresLink: !!editingTask.requiresLink,
+      linkType: editingTask.linkType || 'drive',
+    });
+    setOpen(true);
+    setError('');
+  }, [editingTask]);
+
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const closeForm = () => {
+    setOpen(false);
+    setForm(emptyForm);
+    setError('');
+    if (isEditing) onCancelEdit?.();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,21 +68,27 @@ function CreateTaskForm({ genres, onCreated }) {
 
     setSaving(true);
     setError('');
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      points: Number(form.points) || 0,
+      points_diff_college: form.type === 'referral' ? Number(form.pointsDiffCollege) || 0 : 0,
+      club: form.club || null,
+      pinned: form.pinned,
+      type: form.type,
+      requiresLink: form.type === 'referral' ? false : form.requiresLink,
+      linkType: form.linkType,
+    };
+
     try {
-      const task = await api.createTask({
-        title: form.title.trim(),
-        description: form.description.trim(),
-        points: Number(form.points) || 0,
-        points_diff_college: form.type === 'referral' ? Number(form.pointsDiffCollege) || 0 : 0,
-        club: form.club || null,
-        pinned: form.pinned,
-        type: form.type,
-        requiresLink: form.type === 'referral' ? false : form.requiresLink,
-        linkType: form.linkType,
-      });
-      onCreated(task);
-      setForm(emptyForm);
-      setOpen(false);
+      if (isEditing) {
+        const task = await api.updateTask(editingTask._id, payload);
+        onUpdated(task);
+      } else {
+        const task = await api.createTask(payload);
+        onCreated(task);
+      }
+      closeForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -82,9 +114,9 @@ function CreateTaskForm({ genres, onCreated }) {
   return (
     <div className="bg-[#111118] border border-white/[0.07] rounded-2xl p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-white">New Task</h2>
+        <h2 className="text-base font-semibold text-white">{isEditing ? 'Edit Task' : 'New Task'}</h2>
         <button
-          onClick={() => { setOpen(false); setForm(emptyForm); setError(''); }}
+          onClick={closeForm}
           className="text-slate-500 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -180,15 +212,22 @@ function CreateTaskForm({ genres, onCreated }) {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 pt-6">
-            <input
-              type="checkbox"
-              id="pinned"
-              checked={form.pinned}
-              onChange={(e) => update('pinned', e.target.checked)}
-              className="w-4 h-4 rounded border-white/20 bg-white/[0.04] accent-indigo-600"
-            />
-            <label htmlFor="pinned" className="text-sm text-slate-300">Pin to top of page</label>
+          <div className="sm:col-span-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="pinned"
+                checked={form.pinned}
+                onChange={(e) => update('pinned', e.target.checked)}
+                className="w-4 h-4 rounded border-white/20 bg-white/[0.04] accent-indigo-600"
+              />
+              <label htmlFor="pinned" className="text-sm text-slate-300">Pin to top of page</label>
+            </div>
+            {form.pinned && form.club && (
+              <p className="mt-1.5 text-xs text-indigo-300/80">
+                This is now a "common" task — pinned globally at the top, and also shown inside its genre below.
+              </p>
+            )}
           </div>
 
           {form.type !== 'referral' && (
@@ -227,7 +266,7 @@ function CreateTaskForm({ genres, onCreated }) {
         <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
-            onClick={() => { setOpen(false); setForm(emptyForm); setError(''); }}
+            onClick={closeForm}
             className="px-4 py-2 text-xs rounded-xl border border-white/10 text-slate-400 hover:bg-white/[0.05] transition-colors"
           >
             Cancel
@@ -243,7 +282,7 @@ function CreateTaskForm({ genres, onCreated }) {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {saving ? 'Creating...' : 'Create Task'}
+            {saving ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Create Task')}
           </button>
         </div>
       </form>
@@ -257,6 +296,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [editingTask, setEditingTask] = useState(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -281,6 +321,11 @@ export default function Tasks() {
     setTasks((prev) => [{ ...task, club }, ...prev]);
   };
 
+  const handleUpdated = (task) => {
+    // The update response is already populated with { name, slug } for club.
+    setTasks((prev) => prev.map((t) => (t._id === task._id ? task : t)));
+  };
+
   const handleDelete = async (task) => {
     if (!window.confirm(`Delete task "${task.title}"? This cannot be undone.`)) return;
     setDeletingId(task._id);
@@ -302,7 +347,13 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-white font-[Outfit]">Tasks</h1>
           <p className="text-slate-400 text-sm mt-1">Create and manage tasks students can complete for points</p>
         </div>
-        <CreateTaskForm genres={genres} onCreated={handleCreated} />
+        <TaskForm
+          genres={genres}
+          editingTask={editingTask}
+          onCreated={handleCreated}
+          onUpdated={handleUpdated}
+          onCancelEdit={() => setEditingTask(null)}
+        />
       </div>
 
       {/* List */}
@@ -371,7 +422,16 @@ export default function Tasks() {
                         <span className="text-slate-600 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 pr-6 text-right">
+                    <td className="px-4 py-3 pr-6 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setEditingTask(task)}
+                        className="text-slate-500 hover:text-indigo-400 transition-colors p-1.5"
+                        title="Edit task"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
                       <button
                         onClick={() => handleDelete(task)}
                         disabled={deletingId === task._id}
