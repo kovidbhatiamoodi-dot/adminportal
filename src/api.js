@@ -64,6 +64,11 @@ export const api = {
   getStats: () =>
     fetch(`${BASE_URL}/stats`, { headers: headers() }).then(handleResponse),
 
+  getRegistrationsByDate: (date) =>
+    fetch(`${BASE_URL}/registrations-by-date?date=${encodeURIComponent(date)}`, {
+      headers: headers(),
+    }).then(handleResponse),
+
   getUsers: (page = 1, limit = 50, search = '') =>
     fetch(`${BASE_URL}/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`, {
       headers: headers(),
@@ -75,6 +80,9 @@ export const api = {
       headers: headers(),
       body: JSON.stringify({ points }),
     }).then(handleResponse),
+
+  getUserPointsLog: (userId) =>
+    fetch(`${BASE_URL}/users/${userId}/points-log`, { headers: headers() }).then(handleResponse),
 
   exportAllUsers: async () => {
     const res = await fetch(`${BASE_URL}/users/export`, { headers: headers() });

@@ -121,6 +121,144 @@ function PointsEditor({ user, onPointsUpdated }) {
   );
 }
 
+// ─── Registrations on a specific date ────────────────────────────────────────
+function RegistrationsByDate() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [date, setDate] = useState(todayStr);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCheck = async (e) => {
+    e.preventDefault();
+    if (!date) return;
+    setLoading(true);
+    setError('');
+    setResult(null);
+    try {
+      const data = await api.getRegistrationsByDate(date);
+      setResult(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#111118] border border-white/[0.07] rounded-2xl px-6 py-4">
+      <h2 className="text-base font-semibold text-white mb-1">Registrations on a Date</h2>
+      <p className="text-slate-500 text-xs mb-3">Pick any date to see how many users registered that day</p>
+
+      <form onSubmit={handleCheck} className="flex flex-wrap items-center gap-2">
+        <input
+          type="date"
+          value={date}
+          max={todayStr}
+          onChange={(e) => setDate(e.target.value)}
+          className="bg-white/[0.04] border border-white/10 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50 [color-scheme:dark]"
+        />
+        <button type="submit" disabled={loading}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+          {loading ? 'Checking...' : 'Check'}
+        </button>
+
+        {error && <span className="text-red-400 text-xs">{error}</span>}
+        {result && !error && (
+          <span className="text-sm text-slate-300">
+            <span className="text-white font-semibold">{result.count}</span> registration{result.count === 1 ? '' : 's'} on{' '}
+            <span className="text-white font-medium">
+              {new Date(`${result.date}T00:00:00.000Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+          </span>
+        )}
+      </form>
+    </div>
+  );
+}
+
+// ─── Points Log Modal ─────────────────────────────────────────────────────────
+function PointsLogModal({ userId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api.getUserPointsLog(userId)
+      .then((res) => { if (!cancelled) setData(res); })
+      .catch((err) => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        className="bg-[#111118] border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between shrink-0">
+          <div>
+            <h3 className="text-white font-semibold text-sm">
+              {data?.user ? `${data.user.full_name} — Points Log` : 'Points Log'}
+            </h3>
+            {data?.user && (
+              <p className="text-slate-500 text-xs mt-0.5">{data.user.mi_no} · Total: {data.user.totalpoints}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1" title="Close">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <svg className="animate-spin w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-red-400 text-sm">{error}</div>
+          ) : !data?.logs?.length ? (
+            <div className="text-center py-12 text-slate-500 text-sm">No points activity yet</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.05]">
+                  {['Change', 'Reason', 'Source', 'Date'].map((col) => (
+                    <th key={col} className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-2 whitespace-nowrap first:pl-5 last:pr-5">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {data.logs.map((log) => (
+                  <tr key={log._id}>
+                    <td className={`px-4 py-2 pl-5 text-xs font-semibold tabular-nums whitespace-nowrap ${log.change_amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {log.change_amount >= 0 ? '+' : ''}{log.change_amount}
+                    </td>
+                    <td className="px-4 py-2 text-slate-300 text-xs max-w-[160px] truncate" title={log.reason}>{log.reason}</td>
+                    <td className="px-4 py-2 text-slate-400 text-xs whitespace-nowrap">{log.source}</td>
+                    <td className="px-4 py-2 pr-5 text-slate-500 text-xs whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 const PAGE_SIZE = 20; // max 20 per page for performance
 
@@ -136,6 +274,7 @@ export default function Dashboard() {
   const [error, setError]         = useState('');
   const [dlPageLoading, setDlPage] = useState(false);
   const [dlAllLoading, setDlAll]   = useState(false);
+  const [logUserId, setLogUserId] = useState(null);
 
   const fetchStats = useCallback(async () => {
     try { setStats(await api.getStats()); } catch {}
@@ -209,12 +348,18 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Total Registrations" value={stats?.totalUsers} color="indigo" sub="All time"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}
         />
-        <StatCard label="New (Last 7 Days)" value={stats?.recentRegistrations} color="emerald" sub="Recent signups"
+        <StatCard label="New (Last 24 Hours)" value={stats?.registrationsLast24h} color="emerald" sub="Rolling 24h"
+          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+        />
+        <StatCard label="New (Last 7 Days)" value={stats?.recentRegistrations} color="emerald" sub="Rolling 7 days"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>}
+        />
+        <StatCard label="New (Last 30 Days)" value={stats?.registrationsLast30Days} color="emerald" sub="Rolling 30 days"
+          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
         />
         <StatCard label="Pending Threads" value={stats?.threads?.pending} color="amber" sub="Awaiting review"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
@@ -223,6 +368,9 @@ export default function Dashboard() {
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
         />
       </div>
+
+      {/* Registrations on a specific date */}
+      <RegistrationsByDate />
 
       {/* Users Table */}
       <div className="bg-[#111118] border border-white/[0.07] rounded-2xl overflow-hidden">
@@ -351,7 +499,18 @@ export default function Dashboard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${genderBadge(user.gender)}`}>{user.gender}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <PointsEditor user={user} onPointsUpdated={handlePointsUpdated} />
+                      <div className="flex items-center gap-2">
+                        <PointsEditor user={user} onPointsUpdated={handlePointsUpdated} />
+                        <button
+                          onClick={() => setLogUserId(user._id)}
+                          className="text-slate-500 hover:text-indigo-300 transition-colors p-1"
+                          title="View points log"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h4M9 17H7a2 2 0 01-2-2V5a2 2 0 012-2h6l4 4v3M9 17v4l3-3m-3 3l-3-3"/>
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
                       {user.referred_by ? (
@@ -414,6 +573,10 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {logUserId && (
+        <PointsLogModal userId={logUserId} onClose={() => setLogUserId(null)} />
+      )}
     </div>
   );
 }
