@@ -151,4 +151,16 @@ export const api = {
       headers: headers(),
       body: JSON.stringify({ status }),
     }).then(handleResponse),
+
+  getPrCandidates: (page = 1, status = 'pending') =>
+    fetch(`${BASE_URL}/pr-candidates?page=${page}&limit=20&status=${status}`, {
+      headers: headers(),
+    }).then(handleResponse),
+
+  updatePrStatus: (userId, status) =>
+    fetch(`${BASE_URL}/pr-candidates/${userId}/status`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ status }),
+    }).then(handleResponse),
 };

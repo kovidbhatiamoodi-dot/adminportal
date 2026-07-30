@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Threads from './pages/Threads';
 import Tasks from './pages/Tasks';
 import TaskSubmissions from './pages/TaskSubmissions';
+import PrApprovals from './pages/PrApprovals';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -13,6 +14,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0);
+  const [pendingPrCount, setPendingPrCount] = useState(0);
   const [checking, setChecking]     = useState(true);
 
   // On mount: check if a stored token is still valid by hitting /stats
@@ -38,6 +40,14 @@ export default function App() {
     if (!authed) return;
     api.getTaskSubmissions(1, 'pending')
       .then((data) => setPendingSubmissionsCount(data.totalDocs ?? 0))
+      .catch(() => {});
+  }, [authed]);
+
+  // Fetch pending PR approvals count for sidebar badge
+  useEffect(() => {
+    if (!authed) return;
+    api.getPrCandidates(1, 'pending')
+      .then((data) => setPendingPrCount(data.totalDocs ?? 0))
       .catch(() => {});
   }, [authed]);
 
@@ -78,6 +88,7 @@ export default function App() {
         onLogout={handleLogout}
         pendingCount={pendingCount}
         pendingSubmissionsCount={pendingSubmissionsCount}
+        pendingPrCount={pendingPrCount}
       />
 
       {/* Main content */}
@@ -90,6 +101,7 @@ export default function App() {
                 : activePage === 'users' ? '👥 Registrations'
                 : activePage === 'tasks' ? '✅ Tasks'
                 : activePage === 'submissions' ? '📥 Task Submissions'
+                : activePage === 'pr' ? '⭐ PR Approvals'
                 : '💬 Thread Moderation'}
             </h2>
             <p className="text-xs text-slate-500">CCP 2026 · Moodi Indigo Admin</p>
@@ -107,6 +119,9 @@ export default function App() {
           {activePage === 'tasks' && <Tasks />}
           {activePage === 'submissions' && (
             <TaskSubmissions onPendingCountChange={setPendingSubmissionsCount} />
+          )}
+          {activePage === 'pr' && (
+            <PrApprovals onPendingCountChange={setPendingPrCount} />
           )}
           {activePage === 'threads' && (
             <Threads onPendingCountChange={setPendingCount} />
