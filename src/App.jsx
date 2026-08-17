@@ -18,6 +18,7 @@ import { api } from './api';
 // else. The two are separate teams and neither is authorised over the other's
 // data; the backend enforces it in both directions.
 const PAGES_BY_ROLE = {
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'multicity'],
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr'],
   coordinator: ['submissions'],
   compi: ['multicity'],
@@ -34,6 +35,7 @@ const PAGE_TITLES = {
 };
 
 const ROLE_LABELS = {
+  superadmin: 'Super Admin',
   admin: 'Admin',
   coordinator: 'Coordinator',
   compi: 'Multicity Compi',
@@ -50,7 +52,10 @@ export default function App() {
   const [checking, setChecking]     = useState(true);
 
   const allowedPages = PAGES_BY_ROLE[role] ?? PAGES_BY_ROLE.coordinator;
-  const isAdmin = role === 'admin';
+  // Derived from the page list rather than `role === 'admin'`, so superadmin —
+  // which is allowed these pages without being "admin" — fetches their badges
+  // too instead of silently showing zero.
+  const canSeeThreads = allowedPages.includes('threads');
 
   const applySession = (nextRole, username) => {
     setRole(nextRole);
@@ -84,14 +89,14 @@ export default function App() {
   }, [authed, canSeeSubmissions]);
 
   useEffect(() => {
-    if (!authed || !isAdmin) return;
+    if (!authed || !canSeeThreads) return;
     api.getAllThreads(1, 'pending')
       .then((data) => setPendingCount(data.totalDocs ?? 0))
       .catch(() => {});
     api.getPrCandidates(1, 'pending')
       .then((data) => setPendingPrCount(data.totalDocs ?? 0))
       .catch(() => {});
-  }, [authed, isAdmin]);
+  }, [authed, canSeeThreads]);
 
   const handleLogin = (data) => {
     localStorage.setItem('admin_token', data.token);

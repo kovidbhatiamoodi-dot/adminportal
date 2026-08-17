@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 
-const STATUS_STYLES = {
-  confirmed: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
-  cancelled: 'bg-red-500/15 text-red-400 border border-red-500/30',
-};
+// Native <option> popups are drawn by the OS, not by the page — they ignore the
+// select's background and fall back to white, so the inherited white text was
+// invisible. Both colours have to be set on the option itself.
+const OPTION_CLASS = 'bg-[#111118] text-white';
 
 const triggerDownload = (blob, filename) => {
   const url = URL.createObjectURL(blob);
@@ -50,14 +50,14 @@ function RegistrationCard({ registration }) {
             {members.length} {members.length === 1 ? 'participant' : 'participants'}
           </p>
         </div>
-        <span
-          className={`text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${
-            STATUS_STYLES[registration.status] ??
-            'bg-slate-500/15 text-slate-400 border border-slate-500/30'
-          }`}
-        >
-          {registration.status || 'unknown'}
-        </span>
+        {/* Every registration is "confirmed" — nothing in any service sets it
+            to anything else — so a badge on every card is noise. It appears
+            only when the value is unexpected, which is when it means something. */}
+        {registration.status && registration.status !== 'confirmed' && (
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 bg-red-500/15 text-red-400 border border-red-500/30">
+            {registration.status}
+          </span>
+        )}
       </div>
 
       <div className="space-y-2 mb-4">
@@ -105,7 +105,10 @@ export default function MulticityRegistrations() {
   const [page, setPage] = useState(1);
 
   const [searchInput, setSearchInput] = useState('');
-  const [filters, setFilters] = useState({ search: '', city: '', competition: '', status: '' });
+  // No status filter: nothing in any service ever writes a status other than
+  // "confirmed", so filtering on it could only ever return everything or
+  // nothing. The API still accepts the param if that changes.
+  const [filters, setFilters] = useState({ search: '', city: '', competition: '' });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -188,33 +191,27 @@ export default function MulticityRegistrations() {
         <select
           value={filters.city}
           onChange={(e) => applyFilter({ city: e.target.value })}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500/40"
+          className="bg-[#111118] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500/40"
         >
-          <option value="">All cities</option>
+          <option value="" className={OPTION_CLASS}>All cities</option>
           {stats?.cities?.map((c) => (
-            <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+            <option key={c.name} value={c.name} className={OPTION_CLASS}>
+              {c.name} ({c.count})
+            </option>
           ))}
         </select>
 
         <select
           value={filters.competition}
           onChange={(e) => applyFilter({ competition: e.target.value })}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500/40"
+          className="bg-[#111118] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500/40"
         >
-          <option value="">All competitions</option>
+          <option value="" className={OPTION_CLASS}>All competitions</option>
           {stats?.competitions?.map((c) => (
-            <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+            <option key={c.name} value={c.name} className={OPTION_CLASS}>
+              {c.name} ({c.count})
+            </option>
           ))}
-        </select>
-
-        <select
-          value={filters.status}
-          onChange={(e) => applyFilter({ status: e.target.value })}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-500/40"
-        >
-          <option value="">All statuses</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="cancelled">Cancelled</option>
         </select>
 
         <button

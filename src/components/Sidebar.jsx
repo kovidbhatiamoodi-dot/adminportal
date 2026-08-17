@@ -70,6 +70,13 @@ const navItems = [
 // compi gets its own colour deliberately — someone glancing at the screen
 // should be able to tell they are in the multicity portal, not CCP's.
 const ROLE_BRANDING = {
+  superadmin: {
+    title: 'MI Super Admin',
+    fallbackUser: 'Super Admin',
+    access: 'Full access — CCP + multicity',
+    logo: 'from-amber-400 to-orange-600 shadow-amber-500/30',
+    name: 'text-amber-300',
+  },
   admin: {
     title: 'CCP Admin',
     fallbackUser: 'MI Admin',
