@@ -174,4 +174,41 @@ export const api = {
       headers: headers(),
       body: JSON.stringify({ status }),
     }).then(handleResponse),
+
+  // ── Multicity competitions (compi role only) ──────────────────────────
+  // These 403 for admin and coordinator tokens by design — the multicity
+  // registrations belong to a different team. See admin.routes.js.
+  getCompiStats: () =>
+    fetch(`${BASE_URL}/compi/stats`, { headers: headers() }).then(handleResponse),
+
+  getCompiRegistrations: (page = 1, filters = {}) => {
+    const params = new URLSearchParams({ page, limit: 50 });
+    for (const key of ['search', 'city', 'competition', 'status']) {
+      if (filters[key]) params.set(key, filters[key]);
+    }
+    return fetch(`${BASE_URL}/compi/registrations?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  // Returns a blob rather than JSON: the CSV is built server-side so the
+  // browser never holds every registration in memory to format it.
+  exportCompiRegistrations: async (filters = {}) => {
+    const params = new URLSearchParams();
+    for (const key of ['search', 'city', 'competition', 'status']) {
+      if (filters[key]) params.set(key, filters[key]);
+    }
+    const res = await fetch(`${BASE_URL}/compi/registrations/export?${params}`, {
+      headers: headers(),
+    });
+    if (!res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.message || 'Export failed');
+      }
+      throw new Error(`Export failed (${res.status}) — backend may not be running`);
+    }
+    return res.blob();
+  },
 };

@@ -45,6 +45,16 @@ const navItems = [
     ),
   },
   {
+    id: 'multicity',
+    label: 'Multicity Regs',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (
@@ -54,6 +64,34 @@ const navItems = [
     ),
   },
 ];
+
+// Per-role branding. Was a boolean `isAdmin` when there were two roles; a third
+// made every ternary a nested one, so the variants live in a table instead.
+// compi gets its own colour deliberately — someone glancing at the screen
+// should be able to tell they are in the multicity portal, not CCP's.
+const ROLE_BRANDING = {
+  admin: {
+    title: 'CCP Admin',
+    fallbackUser: 'MI Admin',
+    access: 'Full access',
+    logo: 'from-indigo-500 to-purple-600 shadow-indigo-500/30',
+    name: 'text-indigo-300',
+  },
+  coordinator: {
+    title: 'CCP Coordinator',
+    fallbackUser: 'Coordinator',
+    access: 'Task approvals only',
+    logo: 'from-teal-500 to-emerald-600 shadow-teal-500/30',
+    name: 'text-teal-300',
+  },
+  compi: {
+    title: 'Multicity Compi',
+    fallbackUser: 'Compi',
+    access: 'Multicity registrations only',
+    logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
+    name: 'text-rose-300',
+  },
+};
 
 export default function Sidebar({
   active,
@@ -72,25 +110,21 @@ export default function Sidebar({
     ? navItems.filter((item) => allowedPages.includes(item.id))
     : navItems;
 
-  const isAdmin = role === 'admin';
+  const brand = ROLE_BRANDING[role] ?? ROLE_BRANDING.coordinator;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#111118] border-r border-white/[0.07] flex flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-6 border-b border-white/[0.07]">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg ${
-            isAdmin
-              ? 'from-indigo-500 to-purple-600 shadow-indigo-500/30'
-              : 'from-teal-500 to-emerald-600 shadow-teal-500/30'
-          }`}>
+          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg ${brand.logo}`}>
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <div>
             <p className="text-white font-bold text-sm font-[Outfit]">
-              {isAdmin ? 'CCP Admin' : 'CCP Coordinator'}
+              {brand.title}
             </p>
             <p className="text-slate-500 text-xs">Portal 2026</p>
           </div>
@@ -143,11 +177,11 @@ export default function Sidebar({
       <div className="px-3 py-5 border-t border-white/[0.07]">
         <div className="bg-white/[0.03] rounded-xl px-4 py-3 mb-3">
           <p className="text-xs text-slate-500 mb-0.5">Signed in as</p>
-          <p className={`text-sm font-semibold ${isAdmin ? 'text-indigo-300' : 'text-teal-300'}`}>
-            {username || (isAdmin ? 'MI Admin' : 'Coordinator')}
+          <p className={`text-sm font-semibold ${brand.name}`}>
+            {username || brand.fallbackUser}
           </p>
           <p className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">
-            {isAdmin ? 'Full access' : 'Task approvals only'}
+            {brand.access}
           </p>
         </div>
         <button

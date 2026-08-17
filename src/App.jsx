@@ -5,6 +5,7 @@ import Threads from './pages/Threads';
 import Tasks from './pages/Tasks';
 import TaskSubmissions from './pages/TaskSubmissions';
 import PrApprovals from './pages/PrApprovals';
+import MulticityRegistrations from './pages/MulticityRegistrations';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -12,9 +13,14 @@ import { api } from './api';
 // backend's admin.routes.js — it is not the security boundary. A coordinator
 // who forces `activePage` to 'users' gets an empty table and a 403 from every
 // request behind it; the server is what actually refuses.
+//
+// Note that admin does NOT include 'multicity', and compi includes nothing
+// else. The two are separate teams and neither is authorised over the other's
+// data; the backend enforces it in both directions.
 const PAGES_BY_ROLE = {
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr'],
   coordinator: ['submissions'],
+  compi: ['multicity'],
 };
 
 const PAGE_TITLES = {
@@ -24,6 +30,13 @@ const PAGE_TITLES = {
   submissions: '📥 Task Submissions',
   pr:          '⭐ PR Approvals',
   threads:     '💬 Thread Moderation',
+  multicity:   '📍 Multicity Registrations',
+};
+
+const ROLE_LABELS = {
+  admin: 'Admin',
+  coordinator: 'Coordinator',
+  compi: 'Multicity Compi',
 };
 
 export default function App() {
@@ -58,15 +71,17 @@ export default function App() {
       .finally(() => setChecking(false));
   }, []);
 
-  // Sidebar badges. Coordinators may only call the submissions endpoint, so
-  // the admin-only counts are not fetched for them — they would 403 and log
-  // noise on every sign-in.
+  // Sidebar badges. Each count is fetched only by roles allowed the page it
+  // belongs to — otherwise the request 403s and logs noise on every sign-in.
+  // compi reaches none of these, so it fetches none of them.
+  const canSeeSubmissions = allowedPages.includes('submissions');
+
   useEffect(() => {
-    if (!authed) return;
+    if (!authed || !canSeeSubmissions) return;
     api.getTaskSubmissions(1, 'pending')
       .then((data) => setPendingSubmissionsCount(data.totalDocs ?? 0))
       .catch(() => {});
-  }, [authed]);
+  }, [authed, canSeeSubmissions]);
 
   useEffect(() => {
     if (!authed || !isAdmin) return;
@@ -134,7 +149,7 @@ export default function App() {
               {PAGE_TITLES[page] ?? PAGE_TITLES.submissions}
             </h2>
             <p className="text-xs text-slate-500">
-              CCP 2026 · Moodi Indigo {isAdmin ? 'Admin' : 'Coordinator'}
+              CCP 2026 · Moodi Indigo {ROLE_LABELS[role] ?? ROLE_LABELS.coordinator}
             </p>
           </div>
           <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-1.5">
@@ -157,6 +172,7 @@ export default function App() {
           {page === 'threads' && (
             <Threads onPendingCountChange={setPendingCount} />
           )}
+          {page === 'multicity' && <MulticityRegistrations />}
         </div>
       </main>
     </div>
