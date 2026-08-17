@@ -61,8 +61,19 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }).then(handleResponse),
 
+  // Session bootstrap. Every signed-in role can call this — /stats cannot be
+  // used for the purpose because it is admin-only, so a coordinator would be
+  // signed straight back out on reload.
+  getMe: () =>
+    fetch(`${BASE_URL}/me`, { headers: headers() }).then(handleResponse),
+
   getStats: () =>
     fetch(`${BASE_URL}/stats`, { headers: headers() }).then(handleResponse),
+
+  getRegistrationAnalytics: (days = 30) =>
+    fetch(`${BASE_URL}/registration-analytics?days=${encodeURIComponent(days)}`, {
+      headers: headers(),
+    }).then(handleResponse),
 
   getRegistrationsByDate: (date) =>
     fetch(`${BASE_URL}/registrations-by-date?date=${encodeURIComponent(date)}`, {

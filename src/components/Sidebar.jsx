@@ -55,19 +55,43 @@ const navItems = [
   },
 ];
 
-export default function Sidebar({ active, setActive, onLogout, pendingCount, pendingSubmissionsCount, pendingPrCount }) {
+export default function Sidebar({
+  active,
+  setActive,
+  onLogout,
+  allowedPages,
+  role = 'admin',
+  username,
+  pendingCount,
+  pendingSubmissionsCount,
+  pendingPrCount,
+}) {
+  // Only the pages this role may open. The backend refuses the rest regardless;
+  // hiding them keeps a coordinator from clicking into dead panels.
+  const visibleItems = allowedPages
+    ? navItems.filter((item) => allowedPages.includes(item.id))
+    : navItems;
+
+  const isAdmin = role === 'admin';
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-[#111118] border-r border-white/[0.07] flex flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-6 border-b border-white/[0.07]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg ${
+            isAdmin
+              ? 'from-indigo-500 to-purple-600 shadow-indigo-500/30'
+              : 'from-teal-500 to-emerald-600 shadow-teal-500/30'
+          }`}>
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <div>
-            <p className="text-white font-bold text-sm font-[Outfit]">CCP Admin</p>
+            <p className="text-white font-bold text-sm font-[Outfit]">
+              {isAdmin ? 'CCP Admin' : 'CCP Coordinator'}
+            </p>
             <p className="text-slate-500 text-xs">Portal 2026</p>
           </div>
         </div>
@@ -75,7 +99,7 @@ export default function Sidebar({ active, setActive, onLogout, pendingCount, pen
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-5 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = active === item.id;
           return (
             <button
@@ -119,7 +143,12 @@ export default function Sidebar({ active, setActive, onLogout, pendingCount, pen
       <div className="px-3 py-5 border-t border-white/[0.07]">
         <div className="bg-white/[0.03] rounded-xl px-4 py-3 mb-3">
           <p className="text-xs text-slate-500 mb-0.5">Signed in as</p>
-          <p className="text-sm font-semibold text-indigo-300">MI Admin</p>
+          <p className={`text-sm font-semibold ${isAdmin ? 'text-indigo-300' : 'text-teal-300'}`}>
+            {username || (isAdmin ? 'MI Admin' : 'Coordinator')}
+          </p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-500 mt-0.5">
+            {isAdmin ? 'Full access' : 'Task approvals only'}
+          </p>
         </div>
         <button
           id="logout-btn"
