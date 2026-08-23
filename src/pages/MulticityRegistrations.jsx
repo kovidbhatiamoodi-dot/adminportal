@@ -6,6 +6,8 @@ import { api } from '../api';
 // invisible. Both colours have to be set on the option itself.
 const OPTION_CLASS = 'bg-[#111118] text-white';
 
+const plural = (n, word) => `${n} ${n === 1 ? word : `${word}s`}`;
+
 const triggerDownload = (blob, filename) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -15,11 +17,55 @@ const triggerDownload = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
-function StatTile({ label, value }) {
+function StatTile({ label, value, hint }) {
   return (
     <div className="bg-[#111118] border border-white/[0.07] rounded-2xl px-5 py-4">
       <p className="text-xs text-slate-500 mb-1">{label}</p>
       <p className="text-2xl font-bold text-rose-300">{value}</p>
+      {hint && <p className="text-[10px] text-slate-600 mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+// City-wise totals, participants first. The dropdown only ever had a
+// registration count, which reads as "slots filled" and undercounts every team
+// event — a 12-person Desi Beats entry is one registration and twelve people to
+// seat. Doubles as the filter control, so the number you click is the number
+// the list then shows.
+function CityBreakdown({ cities, activeCity, onPick }) {
+  if (!cities?.length) return null;
+
+  return (
+    <div className="bg-[#111118] border border-white/[0.07] rounded-2xl p-5">
+      <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
+        City-wise breakdown
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {cities.map((c) => {
+          const active = activeCity === c.name;
+          return (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => onPick(active ? '' : c.name)}
+              className={`text-left rounded-xl border px-3 py-2 transition-colors ${
+                active
+                  ? 'border-rose-500/40 bg-rose-500/[0.08]'
+                  : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]'
+              }`}
+            >
+              <p className={`text-sm font-medium ${active ? 'text-rose-200' : 'text-slate-200'}`}>
+                {c.name}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                <span className="text-slate-300 font-semibold">{c.participants}</span>
+                {' '}{c.participants === 1 ? 'participant' : 'participants'}
+                <span className="text-slate-600"> · {plural(c.count, 'registration')}</span>
+              </p>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -114,19 +160,24 @@ export default function MulticityRegistrations() {
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    api.getCompiStats().then(setStats).catch(() => {});
-  }, []);
-
+  // Stats are fetched with the list and under the same filters, not once on
+  // mount. Fetched once, they described the whole collection while the list
+  // below them described one city — so a city reading "9" opened onto a single
+  // registration. They cannot drift now: same filters, same request.
   const load = useCallback(() => {
     setLoading(true);
     setError('');
-    api
-      .getCompiRegistrations(page, filters)
-      .then((data) => {
+    Promise.all([
+      api.getCompiRegistrations(page, filters),
+      // Stats failing is not worth blanking the list over — the previous
+      // numbers stay on screen and the registrations still render.
+      api.getCompiStats(filters).catch(() => null),
+    ])
+      .then(([data, nextStats]) => {
         setRegistrations(data.registrations ?? []);
         setTotalDocs(data.totalDocs ?? 0);
         setTotalPages(data.totalPages ?? 1);
+        if (nextStats) setStats(nextStats);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -161,15 +212,27 @@ export default function MulticityRegistrations() {
     }
   };
 
+  const hasFilters = Boolean(filters.search || filters.city || filters.competition);
+  const filterHint = hasFilters ? 'matching filters' : undefined;
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatTile label="Registrations" value={stats?.registrations ?? '—'} />
-        <StatTile label="Participants" value={stats?.participants ?? '—'} />
-        <StatTile label="Cities" value={stats?.cities?.length ?? '—'} />
-        <StatTile label="Competitions" value={stats?.competitions?.length ?? '—'} />
+        <StatTile label="Registrations" value={stats?.registrations ?? '—'} hint={filterHint} />
+        <StatTile label="Participants" value={stats?.participants ?? '—'} hint={filterHint} />
+        {/* Distinct cities/competitions among the rows in view, which is not
+            the length of the breakdown lists below: those keep every option
+            listed so the filter stays changeable. */}
+        <StatTile label="Cities" value={stats?.cityCount ?? '—'} hint={filterHint} />
+        <StatTile label="Competitions" value={stats?.competitionCount ?? '—'} hint={filterHint} />
       </div>
+
+      <CityBreakdown
+        cities={stats?.cities}
+        activeCity={filters.city}
+        onPick={(city) => applyFilter({ city })}
+      />
 
       {/* Filters */}
       <div className="bg-[#111118] border border-white/[0.07] rounded-2xl p-4 flex flex-wrap gap-3 items-center">
@@ -196,7 +259,7 @@ export default function MulticityRegistrations() {
           <option value="" className={OPTION_CLASS}>All cities</option>
           {stats?.cities?.map((c) => (
             <option key={c.name} value={c.name} className={OPTION_CLASS}>
-              {c.name} ({c.count})
+              {c.name} — {plural(c.participants, 'participant')} / {plural(c.count, 'reg')}
             </option>
           ))}
         </select>
@@ -209,7 +272,7 @@ export default function MulticityRegistrations() {
           <option value="" className={OPTION_CLASS}>All competitions</option>
           {stats?.competitions?.map((c) => (
             <option key={c.name} value={c.name} className={OPTION_CLASS}>
-              {c.name} ({c.count})
+              {c.name} — {plural(c.participants, 'participant')} / {plural(c.count, 'reg')}
             </option>
           ))}
         </select>

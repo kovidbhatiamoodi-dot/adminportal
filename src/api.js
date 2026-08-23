@@ -178,8 +178,18 @@ export const api = {
   // ── Multicity competitions (compi role only) ──────────────────────────
   // These 403 for admin and coordinator tokens by design — the multicity
   // registrations belong to a different team. See admin.routes.js.
-  getCompiStats: () =>
-    fetch(`${BASE_URL}/compi/stats`, { headers: headers() }).then(handleResponse),
+  // Takes the same filters as getCompiRegistrations, because the stats describe
+  // the rows that call returns. Sending no filters asks for fest-wide totals.
+  getCompiStats: (filters = {}) => {
+    const params = new URLSearchParams();
+    for (const key of ['search', 'city', 'competition', 'status']) {
+      if (filters[key]) params.set(key, filters[key]);
+    }
+    const qs = params.toString();
+    return fetch(`${BASE_URL}/compi/stats${qs ? `?${qs}` : ''}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
 
   getCompiRegistrations: (page = 1, filters = {}) => {
     const params = new URLSearchParams({ page, limit: 50 });
