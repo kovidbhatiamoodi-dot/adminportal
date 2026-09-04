@@ -105,9 +105,19 @@ const ROLE_BRANDING = {
   compi: {
     title: 'Multicity Compi',
     fallbackUser: 'Compi',
-    access: 'Multicity registrations only',
+    access: 'Multicity regs — excl. informals',
     logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
     name: 'text-rose-300',
+  },
+  // Its own colour for the same reason compi has one: informals sees the same
+  // screen as compi over a different slice of the same collection, and the one
+  // thing that must never be ambiguous is which slice is on screen.
+  informal: {
+    title: 'Multicity Informals',
+    fallbackUser: 'Informals',
+    access: 'Hysteria · SGTL · Mr & Miss Indigo',
+    logo: 'from-violet-500 to-fuchsia-600 shadow-violet-500/30',
+    name: 'text-violet-300',
   },
 };
 

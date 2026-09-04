@@ -25,7 +25,12 @@ const PAGES_BY_ROLE = {
   superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'multicity'],
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal'],
   coordinator: ['submissions'],
+  // compi and informal open the SAME page. They are not the same data: the
+  // backend scopes every multicity query by role, so compi gets everything
+  // except the three informal competitions and informal gets only those. The
+  // page cannot tell the difference, and does not need to.
   compi: ['multicity'],
+  informal: ['multicity'],
 };
 
 const PAGE_TITLES = {
@@ -44,6 +49,7 @@ const ROLE_LABELS = {
   admin: 'Admin',
   coordinator: 'Coordinator',
   compi: 'Multicity Compi',
+  informal: 'Informals',
 };
 
 export default function App() {
