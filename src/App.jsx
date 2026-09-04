@@ -6,6 +6,7 @@ import Tasks from './pages/Tasks';
 import TaskSubmissions from './pages/TaskSubmissions';
 import PrApprovals from './pages/PrApprovals';
 import MulticityRegistrations from './pages/MulticityRegistrations';
+import PrPortalRegistrations from './pages/PrPortalRegistrations';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -17,9 +18,12 @@ import { api } from './api';
 // Note that admin does NOT include 'multicity', and compi includes nothing
 // else. The two are separate teams and neither is authorised over the other's
 // data; the backend enforces it in both directions.
+//
+// 'pr-portal' sits on the CCP side: superadmin (OCS) and admin (Hospi) only.
+// coordinator and compi are left off it, and the backend refuses them too.
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'multicity'],
-  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'multicity'],
+  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal'],
   coordinator: ['submissions'],
   compi: ['multicity'],
 };
@@ -30,6 +34,7 @@ const PAGE_TITLES = {
   tasks:       '✅ Tasks',
   submissions: '📥 Task Submissions',
   pr:          '⭐ PR Approvals',
+  'pr-portal': '🎤 PR Portal Registrations',
   threads:     '💬 Thread Moderation',
   multicity:   '📍 Multicity Registrations',
 };
@@ -177,6 +182,7 @@ export default function App() {
           {page === 'threads' && (
             <Threads onPendingCountChange={setPendingCount} />
           )}
+          {page === 'pr-portal' && <PrPortalRegistrations />}
           {page === 'multicity' && <MulticityRegistrations />}
         </div>
       </main>

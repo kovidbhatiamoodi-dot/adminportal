@@ -53,6 +53,49 @@ const handleResponse = async (res) => {
   return json.data;
 };
 
+// File downloads come back as CSV/XLSX, not JSON, so `handleResponse` cannot
+// read them — but a *failed* download still returns the usual JSON error body,
+// which is the part worth surfacing. Shared so every export reports failures
+// the same way instead of dumping "Failed to fetch" on the user.
+const fetchBlob = async (url) => {
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.message || 'Export failed');
+    }
+    throw new Error(`Export failed (${res.status}) — backend may not be running`);
+  }
+  return res.blob();
+};
+
+// The filters the compi endpoints accept. Kept in one place because the list,
+// the stats and both exports must agree on them — an export that quietly
+// ignored a filter would hand someone a file that does not match their screen.
+const COMPI_FILTER_KEYS = ['search', 'city', 'competition', 'status'];
+
+const compiFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of COMPI_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
+// Same idea as COMPI_FILTER_KEYS, for the PR portal applications: the list,
+// the stats and the export must agree on the filters or the CSV stops matching
+// the screen it was exported from.
+const PR_FILTER_KEYS = ['search', 'status', 'college'];
+
+const prFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of PR_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
 export const api = {
   login: (username, password) =>
     fetch(`${BASE_URL}/login`, {
@@ -95,18 +138,7 @@ export const api = {
   getUserPointsLog: (userId) =>
     fetch(`${BASE_URL}/users/${userId}/points-log`, { headers: headers() }).then(handleResponse),
 
-  exportAllUsers: async () => {
-    const res = await fetch(`${BASE_URL}/users/export`, { headers: headers() });
-    if (!res.ok) {
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.message || 'Export failed');
-      }
-      throw new Error(`Export failed (${res.status}) — backend may not be running`);
-    }
-    return res.blob();
-  },
+  exportAllUsers: () => fetchBlob(`${BASE_URL}/users/export`),
 
   getPendingThreads: (page = 1) =>
     fetch(`${BASE_URL}/threads/pending?page=${page}&limit=20`, {
@@ -175,27 +207,47 @@ export const api = {
       body: JSON.stringify({ status }),
     }).then(handleResponse),
 
+  // ── PR portal applications (superadmin + admin) ───────────────────────
+  // 403 for coordinator and compi. Distinct from getPrCandidates above: that is
+  // the earned-promotion review queue, this is the students who applied through
+  // the /pr portal themselves.
+  // Same filters on all three, so the tiles and the CSV describe the rows the
+  // list is showing.
+  getPrApplications: (page = 1, filters = {}) => {
+    const params = prFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/pr-applications?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getPrApplicationStats: (filters = {}) => {
+    const qs = prFilterParams(filters).toString();
+    return fetch(`${BASE_URL}/pr-applications/stats${qs ? `?${qs}` : ''}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportPrApplications: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/pr-applications/export?${prFilterParams(filters)}`),
+
   // ── Multicity competitions (compi role only) ──────────────────────────
   // These 403 for admin and coordinator tokens by design — the multicity
   // registrations belong to a different team. See admin.routes.js.
   // Takes the same filters as getCompiRegistrations, because the stats describe
   // the rows that call returns. Sending no filters asks for fest-wide totals.
   getCompiStats: (filters = {}) => {
-    const params = new URLSearchParams();
-    for (const key of ['search', 'city', 'competition', 'status']) {
-      if (filters[key]) params.set(key, filters[key]);
-    }
-    const qs = params.toString();
+    const qs = compiFilterParams(filters).toString();
     return fetch(`${BASE_URL}/compi/stats${qs ? `?${qs}` : ''}`, {
       headers: headers(),
     }).then(handleResponse);
   },
 
   getCompiRegistrations: (page = 1, filters = {}) => {
-    const params = new URLSearchParams({ page, limit: 50 });
-    for (const key of ['search', 'city', 'competition', 'status']) {
-      if (filters[key]) params.set(key, filters[key]);
-    }
+    const params = compiFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
     return fetch(`${BASE_URL}/compi/registrations?${params}`, {
       headers: headers(),
     }).then(handleResponse);
@@ -203,22 +255,13 @@ export const api = {
 
   // Returns a blob rather than JSON: the CSV is built server-side so the
   // browser never holds every registration in memory to format it.
-  exportCompiRegistrations: async (filters = {}) => {
-    const params = new URLSearchParams();
-    for (const key of ['search', 'city', 'competition', 'status']) {
-      if (filters[key]) params.set(key, filters[key]);
-    }
-    const res = await fetch(`${BASE_URL}/compi/registrations/export?${params}`, {
-      headers: headers(),
-    });
-    if (!res.ok) {
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.message || 'Export failed');
-      }
-      throw new Error(`Export failed (${res.status}) — backend may not be running`);
-    }
-    return res.blob();
-  },
+  exportCompiRegistrations: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/compi/registrations/export?${compiFilterParams(filters)}`),
+
+  // Same data, competition-wise: an .xlsx workbook with a summary sheet and one
+  // sheet per competition. Built server-side for the same reason as the CSV —
+  // and because splitting it here would mean shipping a spreadsheet library to
+  // the browser to do what the backend can already do in one pass.
+  exportCompiRegistrationsExcel: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/compi/registrations/export-excel?${compiFilterParams(filters)}`),
 };

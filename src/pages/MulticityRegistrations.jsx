@@ -158,7 +158,9 @@ export default function MulticityRegistrations() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [downloading, setDownloading] = useState(false);
+  // Which export is in flight, not a boolean — there are two buttons now, and a
+  // shared flag would grey out both and give no clue which one is working.
+  const [downloading, setDownloading] = useState('');
 
   // Stats are fetched with the list and under the same filters, not once on
   // mount. Fetched once, they described the whole collection while the list
@@ -195,20 +197,24 @@ export default function MulticityRegistrations() {
     applyFilter({ search: searchInput });
   };
 
-  const handleExport = async () => {
-    setDownloading(true);
+  // Both exports send the filters that are on screen, not the whole collection
+  // — the filters are usually the point of the export (one city, one
+  // competition). Clearing them first is how you get everything.
+  const runExport = async (kind) => {
+    setDownloading(kind);
+    const stamp = new Date().toISOString().split('T')[0];
     try {
-      // Exports what is currently filtered, not the whole collection — the
-      // filters are usually the point of the export (one city, one competition).
-      const blob = await api.exportCompiRegistrations(filters);
-      triggerDownload(
-        blob,
-        `multicity_registrations_${new Date().toISOString().split('T')[0]}.csv`
-      );
+      if (kind === 'excel') {
+        const blob = await api.exportCompiRegistrationsExcel(filters);
+        triggerDownload(blob, `multicity_participation_competition_wise_${stamp}.xlsx`);
+      } else {
+        const blob = await api.exportCompiRegistrations(filters);
+        triggerDownload(blob, `multicity_registrations_${stamp}.csv`);
+      }
     } catch (err) {
       alert('Export failed: ' + err.message);
     } finally {
-      setDownloading(false);
+      setDownloading('');
     }
   };
 
@@ -277,12 +283,25 @@ export default function MulticityRegistrations() {
           ))}
         </select>
 
+        {/* The Excel export is the one people actually want for handing each
+            competition its own roster, so it leads and the flat CSV sits next
+            to it as the raw-data option. */}
         <button
-          onClick={handleExport}
-          disabled={downloading}
+          onClick={() => runExport('excel')}
+          disabled={Boolean(downloading)}
+          title="Excel workbook — one sheet per competition, plus a summary sheet"
           className="px-4 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-sm font-medium hover:bg-emerald-600/30 transition-colors disabled:opacity-50"
         >
-          {downloading ? 'Preparing…' : 'Export CSV'}
+          {downloading === 'excel' ? 'Building workbook…' : 'Download Excel (competition-wise)'}
+        </button>
+
+        <button
+          onClick={() => runExport('csv')}
+          disabled={Boolean(downloading)}
+          title="Flat CSV — one row per participant"
+          className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-300 text-sm font-medium hover:bg-white/[0.08] transition-colors disabled:opacity-50"
+        >
+          {downloading === 'csv' ? 'Preparing…' : 'Export CSV'}
         </button>
       </div>
 
