@@ -23,6 +23,8 @@ const emptyForm = {
   type: 'standard',
   requiresLink: false,
   linkType: 'drive',
+  actionLabel: '',
+  actionUrl: '',
 };
 
 function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
@@ -45,6 +47,8 @@ function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
       type: editingTask.type || 'standard',
       requiresLink: !!editingTask.requiresLink,
       linkType: editingTask.linkType || 'drive',
+      actionLabel: editingTask.actionLabel || '',
+      actionUrl: editingTask.actionUrl || '',
     });
     setOpen(true);
     setError('');
@@ -78,6 +82,10 @@ function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
       type: form.type,
       requiresLink: form.type === 'referral' ? false : form.requiresLink,
       linkType: form.linkType,
+      // Sent trimmed but otherwise as typed — the server is what decides a
+      // URL is acceptable, and it clears the label when the URL is blank.
+      actionLabel: form.actionLabel.trim(),
+      actionUrl: form.actionUrl.trim(),
     };
 
     try {
@@ -262,6 +270,34 @@ function TaskForm({ genres, editingTask, onCreated, onUpdated, onCancelEdit }) {
               )}
             </>
           )}
+
+          {/* Optional button on the student's task card. Separate from the
+              proof link above: this one sends them somewhere (a form, a post
+              to share); that one is what they send back. */}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Button label</label>
+            <input
+              type="text"
+              value={form.actionLabel}
+              onChange={(e) => update('actionLabel', e.target.value)}
+              placeholder="Click Me"
+              className="w-full bg-white/[0.04] border border-white/10 text-white placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Button link</label>
+            <input
+              type="url"
+              value={form.actionUrl}
+              onChange={(e) => update('actionUrl', e.target.value)}
+              placeholder="https://example.com/form"
+              className="w-full bg-white/[0.04] border border-white/10 text-white placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            />
+            <p className="mt-1.5 text-xs text-slate-500">
+              Leave the link empty for no button. Without a label it reads "Click Me".
+            </p>
+          </div>
         </div>
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
@@ -382,7 +418,7 @@ export default function Tasks() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.05]">
-                  {['Title', 'Genre', 'Type', 'Points', 'Pinned', 'Submission', ''].map((col) => (
+                  {['Title', 'Genre', 'Type', 'Points', 'Pinned', 'Submission', 'Button', ''].map((col) => (
                     <th key={col} className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap first:pl-6 last:pr-6">
                       {col}
                     </th>
@@ -421,6 +457,21 @@ export default function Tasks() {
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
                           {LINK_TYPE_LABELS[task.linkType] ?? LINK_TYPE_LABELS.drive}
                         </span>
+                      ) : (
+                        <span className="text-slate-600 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {task.actionUrl ? (
+                        <a
+                          href={task.actionUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={task.actionUrl}
+                          className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors"
+                        >
+                          {task.actionLabel || 'Click Me'}
+                        </a>
                       ) : (
                         <span className="text-slate-600 text-xs">—</span>
                       )}
