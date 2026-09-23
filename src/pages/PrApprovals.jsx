@@ -48,10 +48,12 @@ function CandidateCard({ candidate, threshold, onStatusChange }) {
   return (
     <div className="bg-[#111118] border border-white/[0.07] rounded-2xl overflow-hidden hover:border-white/[0.12] transition-all duration-200">
       <div className="p-5">
-        {/* Points + status */}
+        {/* Source + status */}
         <div className="flex items-center justify-between gap-3 mb-3">
           <span className="text-xs text-slate-500 font-medium">
-            Threshold {threshold.toLocaleString()} pts
+            {candidate.pr_source === 'application'
+              ? 'Applied via PR Portal'
+              : `Threshold ${threshold.toLocaleString()} pts`}
           </span>
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${STATUS_STYLES[candidate.pr_status]}`}>
             {candidate.pr_status}
@@ -77,7 +79,9 @@ function CandidateCard({ candidate, threshold, onStatusChange }) {
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 mb-4 space-y-1">
           <p className="text-xs text-slate-500 truncate">{candidate.college || 'College not set'}</p>
-          <p className="text-xs text-slate-600">Crossed on {formatDate(candidate.pr_qualified_at)}</p>
+          <p className="text-xs text-slate-600">
+            {candidate.pr_source === 'application' ? 'Applied on' : 'Crossed on'} {formatDate(candidate.pr_qualified_at)}
+          </p>
           {candidate.pr_approved_at && (
             <p className="text-xs text-emerald-600/80">Approved on {formatDate(candidate.pr_approved_at)}</p>
           )}
@@ -189,8 +193,9 @@ export default function PrApprovals({ onPendingCountChange }) {
       <div>
         <h1 className="text-2xl font-bold text-white font-[Outfit]">PR Representative Approvals</h1>
         <p className="text-slate-400 text-sm mt-1">
-          Students who crossed {threshold.toLocaleString()} points. Approving unlocks their PR ID card,
-          changes their profile title, shows the congratulations banner and sends the promotion email.
+          Students who crossed {threshold.toLocaleString()} points, or applied directly through the PR
+          portal. Approving unlocks their PR ID card, changes their profile title, shows the
+          congratulations banner and sends the promotion email.
         </p>
       </div>
 
