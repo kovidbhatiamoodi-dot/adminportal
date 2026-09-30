@@ -195,10 +195,13 @@ export const api = {
       body: JSON.stringify({ status }),
     }).then(handleResponse),
 
-  getPrCandidates: (page = 1, status = 'pending') =>
-    fetch(`${BASE_URL}/pr-candidates?page=${page}&limit=20&status=${status}`, {
+  getPrCandidates: (page = 1, status = 'pending', search = '') => {
+    const params = new URLSearchParams({ page, limit: 20, status });
+    if (search.trim()) params.set('search', search.trim());
+    return fetch(`${BASE_URL}/pr-candidates?${params}`, {
       headers: headers(),
-    }).then(handleResponse),
+    }).then(handleResponse);
+  },
 
   updatePrStatus: (userId, status) =>
     fetch(`${BASE_URL}/pr-candidates/${userId}/status`, {

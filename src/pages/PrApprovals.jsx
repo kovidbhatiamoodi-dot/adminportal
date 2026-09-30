@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api';
 
 const STATUS_STYLES = {
@@ -140,14 +140,28 @@ export default function PrApprovals({ onPendingCountChange }) {
   const [totalPages, setPages]      = useState(1);
   const [page, setPage]             = useState(1);
   const [filter, setFilter]         = useState('pending');
+  const [search, setSearch]         = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
+
+  // Debounce: wait 300 ms after the user stops typing before firing a request.
+  const debounceRef = useRef(null);
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(val);
+      setPage(1);
+    }, 300);
+  };
 
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await api.getPrCandidates(page, filter);
+      const data = await api.getPrCandidates(page, filter, debouncedSearch);
       setCandidates(data.candidates);
       setTotal(data.totalDocs);
       setPages(data.totalPages);
@@ -160,7 +174,7 @@ export default function PrApprovals({ onPendingCountChange }) {
     } finally {
       setLoading(false);
     }
-  }, [page, filter, onPendingCountChange]);
+  }, [page, filter, debouncedSearch, onPendingCountChange]);
 
   useEffect(() => { fetchCandidates(); }, [fetchCandidates]);
 
@@ -199,26 +213,57 @@ export default function PrApprovals({ onPendingCountChange }) {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => { setFilter(tab.value); setPage(1); }}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              filter === tab.value
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                : 'bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-white border border-white/[0.07]'
-            }`}
+      {/* Tabs + Search row */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => { setFilter(tab.value); setPage(1); }}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                filter === tab.value
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                  : 'bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-white border border-white/[0.07]'
+              }`}
+            >
+              {tab.label}
+              {tab.value === 'pending' && totalDocs > 0 && filter === 'pending' && (
+                <span className="ml-2 bg-amber-500 text-black text-xs font-bold rounded-full px-1.5 py-0.5">
+                  {totalDocs}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Search bar */}
+        <div className="relative sm:ml-auto w-full sm:w-64">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
-            {tab.label}
-            {tab.value === 'pending' && totalDocs > 0 && filter === 'pending' && (
-              <span className="ml-2 bg-amber-500 text-black text-xs font-bold rounded-full px-1.5 py-0.5">
-                {totalDocs}
-              </span>
-            )}
-          </button>
-        ))}
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            id="pr-candidates-search"
+            type="search"
+            value={search}
+            onChange={handleSearchChange}
+            placeholder="Search name or MI number…"
+            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.06] transition-all duration-200"
+          />
+          {search && (
+            <button
+              onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              aria-label="Clear search"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
