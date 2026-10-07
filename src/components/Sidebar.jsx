@@ -66,6 +66,15 @@ const navItems = [
     ),
   },
   {
+    id: 'acco',
+    label: 'Acco Regs',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21V7a2 2 0 012-2h6a2 2 0 012 2v14M13 11h6a2 2 0 012 2v8M3 21h18M7 9h2m-2 4h2m-2 4h2" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (

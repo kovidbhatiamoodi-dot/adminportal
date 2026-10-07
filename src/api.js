@@ -96,6 +96,18 @@ const prFilterParams = (filters = {}) => {
   return params;
 };
 
+// Accommodation registrations: list, stats and export must agree on the
+// filters, same as the PR applications.
+const ACCO_FILTER_KEYS = ['search', 'status', 'type', 'college'];
+
+const accoFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of ACCO_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
 export const api = {
   login: (username, password) =>
     fetch(`${BASE_URL}/login`, {
@@ -234,6 +246,28 @@ export const api = {
 
   exportPrApplications: (filters = {}) =>
     fetchBlob(`${BASE_URL}/pr-applications/export?${prFilterParams(filters)}`),
+
+  // ── Accommodation registrations (superadmin + admin) ──────────────────
+  // 403 for coordinator, compi and informal — hospitality's sheet, not the
+  // multicity teams'. Same three-call shape as the PR applications above.
+  getAccoRegistrations: (page = 1, filters = {}) => {
+    const params = accoFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/acco-registrations?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getAccoStats: (filters = {}) => {
+    const qs = accoFilterParams(filters).toString();
+    return fetch(`${BASE_URL}/acco-registrations/stats${qs ? `?${qs}` : ''}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportAccoRegistrations: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/acco-registrations/export?${accoFilterParams(filters)}`),
 
   // ── Multicity competitions (compi role only) ──────────────────────────
   // These 403 for admin and coordinator tokens by design — the multicity

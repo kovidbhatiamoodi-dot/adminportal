@@ -7,6 +7,7 @@ import TaskSubmissions from './pages/TaskSubmissions';
 import PrApprovals from './pages/PrApprovals';
 import MulticityRegistrations from './pages/MulticityRegistrations';
 import PrPortalRegistrations from './pages/PrPortalRegistrations';
+import AccoRegistrations from './pages/AccoRegistrations';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -21,9 +22,10 @@ import { api } from './api';
 //
 // 'pr-portal' sits on the CCP side: superadmin (OCS) and admin (Hospi) only.
 // coordinator and compi are left off it, and the backend refuses them too.
+// 'acco' (accommodation registrations, hospitality's sheet) follows the same rule.
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'multicity'],
-  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'multicity'],
+  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco'],
   coordinator: ['submissions'],
   // compi and informal open the SAME page. They are not the same data: the
   // backend scopes every multicity query by role, so compi gets everything
@@ -40,6 +42,7 @@ const PAGE_TITLES = {
   submissions: '📥 Task Submissions',
   pr:          '⭐ PR Approvals',
   'pr-portal': '🎤 PR Portal Registrations',
+  acco:        '🏨 Accommodation Registrations',
   threads:     '💬 Thread Moderation',
   multicity:   '📍 Multicity Registrations',
 };
@@ -189,6 +192,7 @@ export default function App() {
             <Threads onPendingCountChange={setPendingCount} />
           )}
           {page === 'pr-portal' && <PrPortalRegistrations />}
+          {page === 'acco' && <AccoRegistrations />}
           {page === 'multicity' && <MulticityRegistrations />}
         </div>
       </main>
