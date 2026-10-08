@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api';
 import StatCard from '../components/StatCard';
 import RegistrationAnalytics from '../components/RegistrationAnalytics';
-import RegistrationsPerDay from '../components/RegistrationsPerDay';
 
 // ─── CSV helpers (for current-page download) ─────────────────────────────────
 const CSV_FIELDS = [
@@ -354,12 +353,6 @@ export default function Dashboard() {
         <StatCard label="Total Registrations" value={stats?.totalUsers} color="indigo" sub="All time"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}
         />
-        <StatCard label="Registered Today" value={stats?.registrationsToday} color="emerald" sub="Since midnight IST"
-          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>}
-        />
-        <StatCard label="Registered Yesterday" value={stats?.registrationsYesterday} color="emerald" sub="Previous calendar day"
-          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
-        />
         <StatCard label="New (Last 24 Hours)" value={stats?.registrationsLast24h} color="emerald" sub="Rolling 24h"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
         />
@@ -378,10 +371,7 @@ export default function Dashboard() {
       </div>
 
       {/* Registration graphs */}
-      <RegistrationAnalytics />
-
-      {/* Per-day registration numbers, 2026 */}
-      <RegistrationsPerDay />
+      <RegistrationAnalytics stats={stats} />
 
       {/* Registrations on a specific date */}
       <RegistrationsByDate />
