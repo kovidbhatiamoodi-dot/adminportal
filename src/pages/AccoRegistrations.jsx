@@ -145,6 +145,7 @@ function YearComparison() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [mode, setMode] = useState('cumulative');
+  const [axis, setAxis] = useState('calendar'); // 'calendar' = same date last year, 'launch' = days since first registration
 
   useEffect(() => {
     let cancelled = false;
@@ -166,19 +167,38 @@ function YearComparison() {
   const prev = data?.previous;
   const key = mode === 'cumulative' ? 'cumulative' : 'count';
 
-  const length = Math.max(cur?.daily.length ?? 0, prev?.daily.length ?? 0);
-  const points = Array.from({ length }, (_, i) => ({
-    day: i + 1,
-    current: cur?.daily[i]?.[key] ?? null,
-    previous: prev?.daily[i]?.[key] ?? null,
-    currentDate: cur?.daily[i]?.date,
-    previousDate: prev?.daily[i]?.date,
-  }));
+  const shortLabel = (iso) =>
+    new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
-  // Same point in the journey: what 2025 had reached by the day 2026 is on now.
-  const todayIdx = (cur?.daily.length ?? 0) - 1;
-  const prevAtSameDay = todayIdx >= 0 ? prev?.daily[Math.min(todayIdx, prev.daily.length - 1)]?.cumulative : undefined;
-  const delta = cur && prevAtSameDay != null ? cur.total - prevAtSameDay : null;
+  // Calendar view: each 2026 date against the same date a year earlier.
+  // Launch view: day N since each year's own first registration.
+  let points;
+  if (axis === 'calendar') {
+    const cKey = mode === 'cumulative' ? 'currentCumulative' : 'current';
+    const pKey = mode === 'cumulative' ? 'previousCumulative' : 'previous';
+    points = (data?.calendar ?? []).map((r, i) => ({
+      day: i + 1,
+      label: shortLabel(r.date),
+      current: r[cKey],
+      previous: r[pKey],
+      currentDate: r.date,
+      previousDate: r.previousDate,
+    }));
+  } else {
+    const length = Math.max(cur?.daily.length ?? 0, prev?.daily.length ?? 0);
+    points = Array.from({ length }, (_, i) => ({
+      day: i + 1,
+      current: cur?.daily[i]?.[key] ?? null,
+      previous: prev?.daily[i]?.[key] ?? null,
+      currentDate: cur?.daily[i]?.date,
+      previousDate: prev?.daily[i]?.date,
+    }));
+  }
+
+  // Headline: where 2025 stood on this very date last year.
+  const same = data?.sameDate;
+  const delta = same && same.previousCumulative != null ? same.currentCumulative - same.previousCumulative : null;
+  const pct = delta != null && same.previousCumulative > 0 ? Math.round((delta / same.previousCumulative) * 100) : null;
 
   return (
     <div className="space-y-4">
@@ -186,8 +206,25 @@ function YearComparison() {
         <div>
           <h2 className="text-sm font-semibold text-white">2026 vs 2025</h2>
           <p className="text-xs text-slate-500">
-            Aligned by day since each year&apos;s first registration · days cut at IST midnight
+            {axis === 'calendar'
+              ? 'Each date against the same date a year earlier'
+              : 'Aligned by day since each year’s first registration'} · days cut at IST midnight
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+          {[['calendar', 'Same date'], ['launch', 'Since launch']].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setAxis(value)}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                axis === value ? 'bg-amber-600/30 text-amber-200' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
           {[['cumulative', 'Cumulative'], ['daily', 'Per day']].map(([value, label]) => (
@@ -203,6 +240,7 @@ function YearComparison() {
             </button>
           ))}
         </div>
+        </div>
       </div>
 
       {data?.previousError && (
@@ -212,13 +250,17 @@ function YearComparison() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatTile label="2026 registrations" value={cur ? cur.total : '—'} hint={cur?.firstDate ? `since ${cur.firstDate}` : undefined} />
-        <StatTile label="2025 registrations" value={prev ? prev.total : '—'} hint={prev?.firstDate ? `${prev.firstDate} → ${prev.lastDate}` : undefined} />
         <StatTile
-          label="vs 2025, same day"
-          value={delta == null ? '—' : `${delta > 0 ? '+' : ''}${delta}`}
-          hint={prevAtSameDay != null ? `2025 had ${prevAtSameDay} by day ${todayIdx + 1}` : undefined}
+          label={same ? `2025 on ${shortLabel(same.lastYearDate)}` : '2025, same date'}
+          value={same && same.previousCumulative != null ? same.previousCumulative.toLocaleString('en-IN') : '—'}
+          hint={same && same.previousOnDay != null ? `${same.previousOnDay} registered that day` : undefined}
         />
+        <StatTile
+          label={same ? `2026 today (${shortLabel(same.today)})` : '2026 today'}
+          value={same ? same.currentCumulative.toLocaleString('en-IN') : '—'}
+          hint={delta == null ? undefined : `${delta > 0 ? '+' : ''}${delta.toLocaleString('en-IN')}${pct != null ? ` (${pct > 0 ? '+' : ''}${pct}%)` : ''} vs same date last year`}
+        />
+        <StatTile label="2025 final total" value={prev ? prev.total.toLocaleString('en-IN') : '—'} hint={prev?.firstDate ? `${prev.firstDate} → ${prev.lastDate}` : undefined} />
         <StatTile
           label="Colleges (26 / 25)"
           value={cur ? `${cur.collegeCount} / ${prev ? prev.collegeCount : '—'}` : '—'}

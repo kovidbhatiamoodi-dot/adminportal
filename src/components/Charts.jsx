@@ -256,7 +256,7 @@ const SERIES_PREV = '#e8a23a';
  * Unlike the single-series charts this one carries a legend, since the colour
  * is the only thing telling the lines apart.
  *
- * `points`: [{ day: number, current: number|null, previous: number|null,
+ * `points`: [{ day: number, label?: string, current: number|null, previous: number|null,
  *              currentDate?: string, previousDate?: string }]
  * A null value ends that line (its year has no data that far in).
  */
@@ -356,7 +356,7 @@ export function CompareLineChart({ points = [], currentLabel, previousLabel }) {
         {points.map((p, i) =>
           i % labelEvery === 0 || i === points.length - 1 ? (
             <text key={p.day} x={model.xs[i]} y={H - 8} textAnchor="middle" fill={INK_MUTED} fontSize="10">
-              Day {p.day}
+              {p.label ?? `Day ${p.day}`}
             </text>
           ) : null
         )}
@@ -382,7 +382,7 @@ export function CompareLineChart({ points = [], currentLabel, previousLabel }) {
             transform: `translateX(${hoverX > W * 0.75 ? '-100%' : hoverX < W * 0.25 ? '0%' : '-50%'})`,
           }}
         >
-          <p className="text-[10px] text-slate-400 whitespace-nowrap">Day {hovered.day}</p>
+          <p className="text-[10px] text-slate-400 whitespace-nowrap">{hovered.label ?? `Day ${hovered.day}`}</p>
           <p className="text-xs whitespace-nowrap" style={{ color: SERIES }}>
             {currentLabel}: <span className="font-semibold text-white">{hovered.current == null ? '—' : fmt(hovered.current)}</span>
             {hovered.currentDate && <span className="text-slate-500"> · {fmtDate(hovered.currentDate)}</span>}
