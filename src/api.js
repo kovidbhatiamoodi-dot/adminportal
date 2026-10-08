@@ -237,9 +237,10 @@ export const api = {
     }).then(handleResponse);
   },
 
-  getPrApplicationStats: (filters = {}) => {
-    const qs = prFilterParams(filters).toString();
-    return fetch(`${BASE_URL}/pr-applications/stats${qs ? `?${qs}` : ''}`, {
+  getPrApplicationStats: (filters = {}, days = 30) => {
+    const params = prFilterParams(filters);
+    params.set('days', days);
+    return fetch(`${BASE_URL}/pr-applications/stats?${params}`, {
       headers: headers(),
     }).then(handleResponse);
   },
@@ -258,6 +259,9 @@ export const api = {
       headers: headers(),
     }).then(handleResponse);
   },
+
+  getAccoComparison: () =>
+    fetch(`${BASE_URL}/acco-registrations/compare`, { headers: headers() }).then(handleResponse),
 
   getAccoStats: (filters = {}) => {
     const qs = accoFilterParams(filters).toString();

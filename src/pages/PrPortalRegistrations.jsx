@@ -1,5 +1,107 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
+import { ChartCard, LineAreaChart, HBarChart } from '../components/Charts';
+
+const RANGES = [
+  { days: 7, label: '7D' },
+  { days: 30, label: '30D' },
+  { days: 90, label: '90D' },
+];
+
+const shortDate = (iso) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', timeZone: 'UTC',
+  });
+
+function RangePicker({ value, onChange, disabled }) {
+  return (
+    <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+      {RANGES.map((r) => (
+        <button
+          key={r.days}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(r.days)}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+            value === r.days ? 'bg-amber-600/30 text-amber-200' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          {r.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Per-day applications plus the usual breakdowns. Follows the same filters as
+// the list below, so picking a college redraws the trend for that college.
+function ApplicationTrends({ stats, days, onDays, loading }) {
+  const daily = stats?.daily ?? [];
+  const dailyPts = daily.map((d) => ({ date: d.date, value: d.count }));
+  const cumPts = daily.map((d) => ({ date: d.date, value: d.cumulative }));
+  const peak = daily.reduce((best, d) => (d.count > (best?.count ?? -1) ? d : best), null);
+  const today = daily[daily.length - 1]?.count ?? 0;
+  const avg = daily.length ? (stats.periodTotal / daily.length).toFixed(1) : '—';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Applications per day</h2>
+          <p className="text-xs text-slate-500">
+            {stats
+              ? `${stats.periodTotal.toLocaleString('en-IN')} in the last ${stats.days} days · days cut at IST midnight`
+              : 'Loading…'}
+          </p>
+        </div>
+        <RangePicker value={days} onChange={onDays} disabled={loading} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <StatTile label="Today" value={stats ? today : '—'} />
+        <StatTile label="Avg / day" value={avg} hint={`last ${stats?.days ?? days} days`} />
+        <StatTile
+          label="Peak day"
+          value={peak ? peak.count : '—'}
+          hint={peak ? shortDate(peak.date) : undefined}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <ChartCard title="New applications per day">
+          <LineAreaChart points={dailyPts} valueLabel="applications" />
+        </ChartCard>
+        <ChartCard title="Cumulative applications" subtitle="Running total across the same window">
+          <LineAreaChart points={cumPts} valueLabel="total" />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <ChartCard title="Top colleges" subtitle="Top 10">
+          <HBarChart
+            items={(stats?.colleges ?? []).slice(0, 10).map((c) => ({ label: c.name, count: c.count }))}
+            emptyLabel="No college data"
+          />
+        </ChartCard>
+        <ChartCard title="Top cities" subtitle="Top 10">
+          <HBarChart
+            items={(stats?.cities ?? []).map((c) => ({ label: c.name, count: c.count }))}
+            emptyLabel="No city data"
+          />
+        </ChartCard>
+        <ChartCard title="Year of study">
+          <HBarChart
+            items={(stats?.years ?? []).map((y) => ({
+              label: y.year == null ? 'Unknown' : `Year ${y.year}`,
+              count: y.count,
+            }))}
+            emptyLabel="No year data"
+          />
+        </ChartCard>
+      </div>
+    </div>
+  );
+}
 
 // Native <option> popups are drawn by the OS and ignore the select's
 // background, so the colours have to be set on the option itself — same reason
@@ -121,6 +223,7 @@ export default function PrPortalRegistrations() {
   const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState({ search: '', status: '', college: '' });
 
+  const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -135,7 +238,7 @@ export default function PrPortalRegistrations() {
       api.getPrApplications(page, filters),
       // Stats failing is not worth blanking the list over: the previous numbers
       // stay on screen and the applications still render.
-      api.getPrApplicationStats(filters).catch(() => null),
+      api.getPrApplicationStats(filters, days).catch(() => null),
     ])
       .then(([data, nextStats]) => {
         setApplications(data.applications ?? []);
@@ -145,7 +248,7 @@ export default function PrPortalRegistrations() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [page, filters]);
+  }, [page, filters, days]);
 
   useEffect(load, [load]);
 
@@ -201,6 +304,8 @@ export default function PrPortalRegistrations() {
           hint="across all filters"
         />
       </div>
+
+      <ApplicationTrends stats={stats} days={days} onDays={setDays} loading={loading} />
 
       <StatusFilter
         counts={stats?.statusCounts}

@@ -248,3 +248,151 @@ export function HBarChart({ items = [], emptyLabel }) {
     </div>
   );
 }
+
+const SERIES_PREV = '#e8a23a';
+
+/**
+ * Two lines on one axis, for comparing the same measure across two years.
+ * Unlike the single-series charts this one carries a legend, since the colour
+ * is the only thing telling the lines apart.
+ *
+ * `points`: [{ day: number, current: number|null, previous: number|null,
+ *              currentDate?: string, previousDate?: string }]
+ * A null value ends that line (its year has no data that far in).
+ */
+export function CompareLineChart({ points = [], currentLabel, previousLabel }) {
+  const [hover, setHover] = useState(null);
+
+  const W = 720;
+  const H = 260;
+  const PAD = { top: 16, right: 16, bottom: 28, left: 44 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const model = useMemo(() => {
+    if (!points.length) return null;
+    const rawMax = Math.max(...points.flatMap((p) => [p.current ?? 0, p.previous ?? 0]), 0);
+    const step = Math.max(1, Math.ceil(rawMax / 4));
+    const niceStep = step <= 5 ? step : Math.ceil(step / 5) * 5;
+    const axisMax = Math.max(niceStep * 4, 4);
+    const x = (i) => PAD.left + (points.length === 1 ? plotW / 2 : (i / (points.length - 1)) * plotW);
+    const y = (v) => PAD.top + plotH - (v / axisMax) * plotH;
+
+    const line = (key) => {
+      let d = '';
+      points.forEach((p, i) => {
+        if (p[key] == null) return;
+        d += `${d ? 'L' : 'M'}${x(i).toFixed(2)},${y(p[key]).toFixed(2)} `;
+      });
+      return d.trim();
+    };
+
+    return {
+      xs: points.map((_, i) => x(i)),
+      y,
+      currentPath: line('current'),
+      previousPath: line('previous'),
+      ticks: [0, 1, 2, 3, 4].map((i) => ({ value: (axisMax / 4) * i, y: y((axisMax / 4) * i) })),
+    };
+  }, [points, plotW, plotH]);
+
+  if (!model) return <EmptyPlot />;
+
+  const labelEvery = Math.max(1, Math.ceil(points.length / 8));
+
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const svgX = ((e.clientX - rect.left) / rect.width) * W;
+    let nearest = 0;
+    let best = Infinity;
+    model.xs.forEach((cx, i) => {
+      const d = Math.abs(cx - svgX);
+      if (d < best) { best = d; nearest = i; }
+    });
+    setHover(nearest);
+  };
+
+  const hovered = hover != null ? points[hover] : null;
+  const hoverX = hover != null ? model.xs[hover] : 0;
+  const fmtDate = (iso) =>
+    iso
+      ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+        })
+      : '';
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-4 mb-2 text-xs text-slate-400">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-0.5 rounded" style={{ backgroundColor: SERIES }} />{currentLabel}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-0.5 rounded" style={{ backgroundColor: SERIES_PREV }} />{previousLabel}
+        </span>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full h-[260px] overflow-visible"
+        onMouseMove={handleMove}
+        onMouseLeave={() => setHover(null)}
+        role="img"
+        aria-label={`${currentLabel} versus ${previousLabel}`}
+      >
+        {model.ticks.map((t) => (
+          <g key={t.value}>
+            <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y} stroke={GRID} strokeWidth="1" />
+            <text x={PAD.left - 8} y={t.y + 3.5} textAnchor="end" fill={INK_MUTED} fontSize="10">
+              {Math.round(t.value)}
+            </text>
+          </g>
+        ))}
+        <line x1={PAD.left} y1={PAD.top + plotH} x2={W - PAD.right} y2={PAD.top + plotH} stroke={AXIS} strokeWidth="1" />
+
+        <path d={model.previousPath} fill="none" stroke={SERIES_PREV} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={model.currentPath} fill="none" stroke={SERIES} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+
+        {points.map((p, i) =>
+          i % labelEvery === 0 || i === points.length - 1 ? (
+            <text key={p.day} x={model.xs[i]} y={H - 8} textAnchor="middle" fill={INK_MUTED} fontSize="10">
+              Day {p.day}
+            </text>
+          ) : null
+        )}
+
+        {hovered && (
+          <g pointerEvents="none">
+            <line x1={hoverX} y1={PAD.top} x2={hoverX} y2={PAD.top + plotH} stroke={AXIS} strokeWidth="1" />
+            {hovered.current != null && (
+              <circle cx={hoverX} cy={model.y(hovered.current)} r="5" fill={SERIES} stroke="#111118" strokeWidth="2" />
+            )}
+            {hovered.previous != null && (
+              <circle cx={hoverX} cy={model.y(hovered.previous)} r="5" fill={SERIES_PREV} stroke="#111118" strokeWidth="2" />
+            )}
+          </g>
+        )}
+      </svg>
+
+      {hovered && (
+        <div
+          className="absolute top-6 pointer-events-none bg-[#1a1a27] border border-white/10 rounded-lg px-3 py-2 shadow-xl"
+          style={{
+            left: `${(hoverX / W) * 100}%`,
+            transform: `translateX(${hoverX > W * 0.75 ? '-100%' : hoverX < W * 0.25 ? '0%' : '-50%'})`,
+          }}
+        >
+          <p className="text-[10px] text-slate-400 whitespace-nowrap">Day {hovered.day}</p>
+          <p className="text-xs whitespace-nowrap" style={{ color: SERIES }}>
+            {currentLabel}: <span className="font-semibold text-white">{hovered.current == null ? '—' : fmt(hovered.current)}</span>
+            {hovered.currentDate && <span className="text-slate-500"> · {fmtDate(hovered.currentDate)}</span>}
+          </p>
+          <p className="text-xs whitespace-nowrap" style={{ color: SERIES_PREV }}>
+            {previousLabel}: <span className="font-semibold text-white">{hovered.previous == null ? '—' : fmt(hovered.previous)}</span>
+            {hovered.previousDate && <span className="text-slate-500"> · {fmtDate(hovered.previousDate)}</span>}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

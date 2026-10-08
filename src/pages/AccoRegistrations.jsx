@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
+import { ChartCard, CompareLineChart } from '../components/Charts';
 
 // Native <option> popups are drawn by the OS and ignore the select's
 // background, so the colours have to be set on the option itself — same reason
@@ -136,6 +137,102 @@ function CollegeBreakdown({ colleges, activeCollege, onPick }) {
   );
 }
 
+// 2026 vs 2025 sign-up curves, lined up by day since each year's first
+// registration (the two fests run on different calendars). 2025 comes from the
+// old backend through ours; if that is unreachable only the 2025 half goes
+// missing and the message says why.
+function YearComparison() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [mode, setMode] = useState('cumulative');
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getAccoComparison()
+      .then((res) => { if (!cancelled) setData(res); })
+      .catch((err) => { if (!cancelled) setError(err.message || 'Could not load comparison'); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="bg-[#111118] border border-red-500/20 rounded-2xl p-5">
+        <p className="text-sm text-red-400">Year comparison unavailable: {error}</p>
+      </div>
+    );
+  }
+
+  const cur = data?.current;
+  const prev = data?.previous;
+  const key = mode === 'cumulative' ? 'cumulative' : 'count';
+
+  const length = Math.max(cur?.daily.length ?? 0, prev?.daily.length ?? 0);
+  const points = Array.from({ length }, (_, i) => ({
+    day: i + 1,
+    current: cur?.daily[i]?.[key] ?? null,
+    previous: prev?.daily[i]?.[key] ?? null,
+    currentDate: cur?.daily[i]?.date,
+    previousDate: prev?.daily[i]?.date,
+  }));
+
+  // Same point in the journey: what 2025 had reached by the day 2026 is on now.
+  const todayIdx = (cur?.daily.length ?? 0) - 1;
+  const prevAtSameDay = todayIdx >= 0 ? prev?.daily[Math.min(todayIdx, prev.daily.length - 1)]?.cumulative : undefined;
+  const delta = cur && prevAtSameDay != null ? cur.total - prevAtSameDay : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-white">2026 vs 2025</h2>
+          <p className="text-xs text-slate-500">
+            Aligned by day since each year&apos;s first registration · days cut at IST midnight
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+          {[['cumulative', 'Cumulative'], ['daily', 'Per day']].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setMode(value)}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                mode === value ? 'bg-amber-600/30 text-amber-200' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {data?.previousError && (
+        <div className="bg-amber-500/[0.06] border border-amber-500/20 rounded-2xl px-5 py-3">
+          <p className="text-xs text-amber-200/90">{data.previousError}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatTile label="2026 registrations" value={cur ? cur.total : '—'} hint={cur?.firstDate ? `since ${cur.firstDate}` : undefined} />
+        <StatTile label="2025 registrations" value={prev ? prev.total : '—'} hint={prev?.firstDate ? `${prev.firstDate} → ${prev.lastDate}` : undefined} />
+        <StatTile
+          label="vs 2025, same day"
+          value={delta == null ? '—' : `${delta > 0 ? '+' : ''}${delta}`}
+          hint={prevAtSameDay != null ? `2025 had ${prevAtSameDay} by day ${todayIdx + 1}` : undefined}
+        />
+        <StatTile
+          label="Colleges (26 / 25)"
+          value={cur ? `${cur.collegeCount} / ${prev ? prev.collegeCount : '—'}` : '—'}
+          hint={cur ? `Cities ${cur.cityCount} / ${prev ? prev.cityCount : '—'}` : undefined}
+        />
+      </div>
+
+      <ChartCard title={mode === 'cumulative' ? 'Cumulative registrations' : 'Registrations per day'}>
+        <CompareLineChart points={points} currentLabel="2026" previousLabel="2025" />
+      </ChartCard>
+    </div>
+  );
+}
+
 export default function AccoRegistrations() {
   const [stats, setStats] = useState(null);
   const [registrations, setRegistrations] = useState([]);
@@ -210,6 +307,8 @@ export default function AccoRegistrations() {
           Hospitality only — not visible to the multicity admins. Read-only: a request is final once the student submits it.
         </p>
       </div>
+
+      <YearComparison />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
