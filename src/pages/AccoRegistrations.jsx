@@ -338,6 +338,32 @@ export default function AccoRegistrations() {
     }
   };
 
+  // Admin override: a student cannot change their type after submitting, so a
+  // mis-picked solo/contingent used to mean a database edit. Confirmed first
+  // because it changes who the hospitality team treats as the group payer.
+  const [typeBusyId, setTypeBusyId] = useState('');
+
+  const changeType = async (row, nextType) => {
+    if (nextType === row.registration_type) return;
+    const name = row.full_name || row.mi_no;
+    const label = nextType === 'individual' ? 'Solo' : 'Contingent';
+    if (!window.confirm(`Switch ${name} to ${label}?`)) return;
+
+    setTypeBusyId(row._id);
+    try {
+      const { registration } = await api.updateAccoRegistrationType(row._id, nextType);
+      setRegistrations((prev) =>
+        prev.map((r) => (r._id === row._id ? { ...r, ...registration } : r))
+      );
+      // The Solo/Contingent chip counts are server-side; refresh them.
+      load();
+    } catch (err) {
+      alert('Could not change type: ' + err.message);
+    } finally {
+      setTypeBusyId('');
+    }
+  };
+
   const hasFilters = Boolean(filters.search || filters.status || filters.type || filters.college);
   const filterHint = hasFilters ? 'matching filters' : undefined;
 
@@ -346,7 +372,7 @@ export default function AccoRegistrations() {
       <div className="bg-amber-500/[0.06] border border-amber-500/20 rounded-2xl px-5 py-3">
         <p className="text-xs text-amber-200/90">
           Accommodation requests submitted from the <span className="font-semibold">/acco portal</span>.
-          Hospitality only — not visible to the multicity admins. Read-only: a request is final once the student submits it.
+          Hospitality only — not visible to the multicity admins. A student cannot change a request once submitted; an admin can switch its type (solo / contingent) from the Type column.
         </p>
       </div>
 
@@ -494,8 +520,25 @@ export default function AccoRegistrations() {
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
                       {a.year_of_study ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap capitalize">
-                      {a.registration_type === 'individual' ? 'Solo' : a.registration_type || '—'}
+                    <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap">
+                      <select
+                        value={a.registration_type || ''}
+                        disabled={typeBusyId === a._id}
+                        onChange={(e) => changeType(a, e.target.value)}
+                        title="Switch between solo and contingent"
+                        className="bg-[#111118] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500/40 disabled:opacity-50"
+                      >
+                        <option value="individual" className={OPTION_CLASS}>Solo</option>
+                        <option value="contingent" className={OPTION_CLASS}>Contingent</option>
+                      </select>
+                      {a.registration_type_changed_by && (
+                        <p
+                          className="text-[10px] text-slate-600 mt-1"
+                          title={formatDate(a.registration_type_changed_at)}
+                        >
+                          changed by {a.registration_type_changed_by}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span

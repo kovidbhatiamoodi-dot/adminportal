@@ -260,6 +260,13 @@ export const api = {
     }).then(handleResponse);
   },
 
+  updateAccoRegistrationType: (id, registration_type) =>
+    fetch(`${BASE_URL}/acco-registrations/${encodeURIComponent(id)}/type`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ registration_type }),
+    }).then(handleResponse),
+
   getAccoComparison: () =>
     fetch(`${BASE_URL}/acco-registrations/compare`, { headers: headers() }).then(handleResponse),
 
