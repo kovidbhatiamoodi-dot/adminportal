@@ -130,9 +130,9 @@ export const api = {
       headers: headers(),
     }).then(handleResponse),
 
-  getRegistrationComparison: (from, to) =>
+  getRegistrationComparison: (from, to, withPrevious = true) =>
     fetch(
-      `${BASE_URL}/registration-comparison?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      `${BASE_URL}/registration-comparison?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${withPrevious ? '' : '&previous=0'}`,
       { headers: headers() }
     ).then(handleResponse),
 
