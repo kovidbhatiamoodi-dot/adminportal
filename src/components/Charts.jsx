@@ -52,7 +52,7 @@ function EmptyPlot({ label = 'No data for this period' }) {
  *
  * `points`: [{ date: 'YYYY-MM-DD', value: number }]
  */
-export function LineAreaChart({ points = [], valueLabel = 'Registrations', showValues = false }) {
+export function LineAreaChart({ points = [], valueLabel = 'Registrations' }) {
   const gradientId = useId();
   const [hover, setHover] = useState(null);
 
@@ -151,23 +151,6 @@ export function LineAreaChart({ points = [], valueLabel = 'Registrations', showV
 
         <path d={areaPath} fill={`url(#${gradientId})`} />
         <path d={path} fill="none" stroke={SERIES} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-
-        {/* The number itself, written above each day, for ranges short enough to
-            stay legible (a 90-day window would just be a smear of digits). */}
-        {showValues && coords.length <= 31 && coords.map((p) => (
-          <text
-            key={`v-${p.date}`}
-            x={p.cx}
-            y={Math.max(p.cy - 8, 10)}
-            textAnchor="middle"
-            fill="#e2e8f0"
-            fontSize="11"
-            fontWeight="600"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
-          >
-            {p.value}
-          </text>
-        ))}
 
         {/* Date labels */}
         {coords.map((p, i) =>

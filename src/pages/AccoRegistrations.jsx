@@ -378,6 +378,22 @@ export default function AccoRegistrations() {
 
       <YearComparison />
 
+      {/* How many registered, written out. Fest-wide: not affected by filters. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-[#111118] border border-emerald-500/20 rounded-2xl px-5 py-4">
+          <p className="text-xs text-slate-500 mb-1">Registered in the last 24 hours</p>
+          <p className="text-4xl font-bold text-emerald-300">
+            {stats ? (stats.registrationsLast24h ?? 0).toLocaleString('en-IN') : '—'}
+          </p>
+        </div>
+        <div className="bg-[#111118] border border-white/[0.07] rounded-2xl px-5 py-4">
+          <p className="text-xs text-slate-500 mb-1">Registered today (since midnight IST)</p>
+          <p className="text-4xl font-bold text-white">
+            {stats ? (stats.registrationsToday ?? 0).toLocaleString('en-IN') : '—'}
+          </p>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatTile label="Registrations" value={stats?.registrations ?? '—'} hint={filterHint} />

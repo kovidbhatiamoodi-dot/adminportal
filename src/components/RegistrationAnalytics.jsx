@@ -28,7 +28,7 @@ function RangePicker({ value, onChange, disabled }) {
   );
 }
 
-export default function RegistrationAnalytics({ stats }) {
+export default function RegistrationAnalytics() {
   const [days, setDays]       = useState(30);
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,28 +76,12 @@ export default function RegistrationAnalytics({ stats }) {
         <RangePicker value={days} onChange={setDays} disabled={loading} />
       </div>
 
-      {/* The numbers, written out: not something to read off a line. */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-        <div className="bg-[#111118] border border-emerald-500/20 rounded-2xl px-5 py-4">
-          <p className="text-xs text-slate-500 mb-1">Registered in the last 24 hours</p>
-          <p className="text-4xl font-bold text-emerald-300">{stats ? (stats.registrationsLast24h ?? 0).toLocaleString('en-IN') : '—'}</p>
-        </div>
-        <div className="bg-[#111118] border border-white/[0.07] rounded-2xl px-5 py-4">
-          <p className="text-xs text-slate-500 mb-1">Registered today (since midnight IST)</p>
-          <p className="text-4xl font-bold text-white">{stats ? (stats.registrationsToday ?? 0).toLocaleString('en-IN') : '—'}</p>
-        </div>
-        <div className="bg-[#111118] border border-white/[0.07] rounded-2xl px-5 py-4">
-          <p className="text-xs text-slate-500 mb-1">Registered yesterday</p>
-          <p className="text-4xl font-bold text-slate-200">{stats ? (stats.registrationsYesterday ?? 0).toLocaleString('en-IN') : '—'}</p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <ChartCard
           title="New registrations per day"
           subtitle={peak ? `Peak ${peak.count.toLocaleString('en-IN')} on ${new Date(`${peak.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : undefined}
         >
-          <LineAreaChart points={dailyPts} valueLabel="registrations" showValues />
+          <LineAreaChart points={dailyPts} valueLabel="registrations" />
         </ChartCard>
 
         <ChartCard title="Cumulative registrations" subtitle="Running total across the same window">

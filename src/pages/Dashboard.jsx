@@ -371,7 +371,7 @@ export default function Dashboard() {
       </div>
 
       {/* Registration graphs */}
-      <RegistrationAnalytics stats={stats} />
+      <RegistrationAnalytics />
 
       {/* Registrations on a specific date */}
       <RegistrationsByDate />
