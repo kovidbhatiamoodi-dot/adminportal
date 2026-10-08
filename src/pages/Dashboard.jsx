@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api';
 import StatCard from '../components/StatCard';
 import RegistrationAnalytics from '../components/RegistrationAnalytics';
+import RegistrationComparison from '../components/RegistrationComparison';
 
 // ─── CSV helpers (for current-page download) ─────────────────────────────────
 const CSV_FIELDS = [
@@ -372,6 +373,9 @@ export default function Dashboard() {
 
       {/* Registration graphs */}
       <RegistrationAnalytics />
+
+      {/* 2026 vs 2025, per day, over a chosen date range */}
+      <RegistrationComparison />
 
       {/* Registrations on a specific date */}
       <RegistrationsByDate />

@@ -130,6 +130,12 @@ export const api = {
       headers: headers(),
     }).then(handleResponse),
 
+  getRegistrationComparison: (from, to) =>
+    fetch(
+      `${BASE_URL}/registration-comparison?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      { headers: headers() }
+    ).then(handleResponse),
+
   getRegistrationsByDate: (date) =>
     fetch(`${BASE_URL}/registrations-by-date?date=${encodeURIComponent(date)}`, {
       headers: headers(),
