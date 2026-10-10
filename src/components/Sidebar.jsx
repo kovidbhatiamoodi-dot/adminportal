@@ -75,6 +75,15 @@ const navItems = [
     ),
   },
   {
+    id: 'cl',
+    label: 'CL Applications',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l2.6 5.3 5.9.9-4.25 4.1 1 5.8L12 16.35 6.75 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (

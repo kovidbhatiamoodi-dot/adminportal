@@ -248,6 +248,37 @@ export const api = {
   exportPrApplications: (filters = {}) =>
     fetchBlob(`${BASE_URL}/pr-applications/export?${prFilterParams(filters)}`),
 
+  // ── Contingent Leader applications (superadmin + admin) ───────────────
+  // 403 for coordinator, compi and informal — the same gate as the PR portal
+  // applications above. Same filters (search / status / college) on all three
+  // reads, so the tiles and the CSV describe the rows the list is showing.
+  getClApplications: (page = 1, filters = {}) => {
+    const params = prFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/cl-applications?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getClApplicationStats: (filters = {}, days = 30) => {
+    const params = prFilterParams(filters);
+    params.set('days', days);
+    return fetch(`${BASE_URL}/cl-applications/stats?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportClApplications: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/cl-applications/export?${prFilterParams(filters)}`),
+
+  updateClApplicationStatus: (id, status) =>
+    fetch(`${BASE_URL}/cl-applications/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ status }),
+    }).then(handleResponse),
+
   // ── Accommodation registrations (superadmin + admin) ──────────────────
   // 403 for coordinator, compi and informal — hospitality's sheet, not the
   // multicity teams'. Same three-call shape as the PR applications above.

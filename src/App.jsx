@@ -8,6 +8,7 @@ import PrApprovals from './pages/PrApprovals';
 import MulticityRegistrations from './pages/MulticityRegistrations';
 import PrPortalRegistrations from './pages/PrPortalRegistrations';
 import AccoRegistrations from './pages/AccoRegistrations';
+import ClApplications from './pages/ClApplications';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -22,10 +23,11 @@ import { api } from './api';
 //
 // 'pr-portal' sits on the CCP side: superadmin (OCS) and admin (Hospi) only.
 // coordinator and compi are left off it, and the backend refuses them too.
-// 'acco' (accommodation registrations, hospitality's sheet) follows the same rule.
+// 'acco' (accommodation registrations, hospitality's sheet) follows the same rule,
+// and so does 'cl' (Contingent Leader applications from the /cl portal).
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'multicity'],
-  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'multicity'],
+  admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl'],
   coordinator: ['submissions'],
   // compi and informal open the SAME page. They are not the same data: the
   // backend scopes every multicity query by role, so compi gets everything
@@ -43,6 +45,7 @@ const PAGE_TITLES = {
   pr:          '⭐ PR Approvals',
   'pr-portal': '🎤 PR Portal Registrations',
   acco:        '🏨 Accommodation Registrations',
+  cl:          '🧭 Contingent Leader Applications',
   threads:     '💬 Thread Moderation',
   multicity:   '📍 Multicity Registrations',
 };
@@ -193,6 +196,7 @@ export default function App() {
           )}
           {page === 'pr-portal' && <PrPortalRegistrations />}
           {page === 'acco' && <AccoRegistrations />}
+          {page === 'cl' && <ClApplications />}
           {page === 'multicity' && <MulticityRegistrations />}
         </div>
       </main>
