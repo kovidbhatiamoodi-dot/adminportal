@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
+import { ChartCard, LineAreaChart } from '../components/Charts';
 
 // Native <option> popups are drawn by the OS, not by the page — they ignore the
 // select's background and fall back to white, so the inherited white text was
@@ -139,6 +140,125 @@ function RegistrationCard({ registration }) {
       <p className="text-xs text-slate-600">
         {registration.registeredEmail || '—'} · {registeredAt}
       </p>
+    </div>
+  );
+}
+
+const DAY_RANGES = [
+  { days: 7, label: '7D' },
+  { days: 30, label: '30D' },
+  { days: 90, label: '90D' },
+];
+
+const METRICS = [
+  { key: 'registrations', label: 'Registrations', perDay: 'count', total: 'cumulative' },
+  { key: 'participants', label: 'Participants', perDay: 'participants', total: 'cumulativeParticipants' },
+];
+
+const shortDate = (iso) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+function SegmentedControl({ options, value, onChange, disabled }) {
+  return (
+    <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(o.value)}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+            value === o.value ? 'bg-rose-600/30 text-rose-200' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Day-wise registrations. It follows the city and competition dropdowns above
+// it, so picking a city (or a competition, or both) redraws the chart for just
+// that slice; with neither picked it is the whole fest.
+function DailyRegistrations({ filters }) {
+  const [days, setDays] = useState(30);
+  const [metric, setMetric] = useState('registrations');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const { search, city, competition } = filters;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+
+    api.getCompiDaily({ search, city, competition }, days)
+      .then((res) => { if (!cancelled) setData(res); })
+      .catch((err) => { if (!cancelled) setError(err.message || 'Could not load the graph'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [search, city, competition, days]);
+
+  if (error) {
+    return (
+      <div className="bg-[#111118] border border-red-500/20 rounded-2xl p-5">
+        <p className="text-sm text-red-400">Day-wise graph unavailable: {error}</p>
+      </div>
+    );
+  }
+
+  const m = METRICS.find((x) => x.key === metric);
+  const daily = data?.daily ?? [];
+  const perDay = daily.map((d) => ({ date: d.date, value: d[m.perDay] }));
+  const running = daily.map((d) => ({ date: d.date, value: d[m.total] }));
+  const peak = daily.reduce((best, d) => (d[m.perDay] > (best?.[m.perDay] ?? -1) ? d : best), null);
+
+  const scope = [city || 'All cities', competition || 'all competitions'].join(' · ');
+  const inWindow = metric === 'registrations' ? data?.periodRegistrations : data?.periodParticipants;
+  const allTime = metric === 'registrations' ? data?.totalRegistrations : data?.totalParticipants;
+
+  return (
+    <div className={`transition-opacity ${loading && !data ? 'opacity-40' : 'opacity-100'}`}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Day-wise registrations</h2>
+          <p className="text-xs text-slate-500">
+            {data
+              ? `${scope} · ${(inWindow ?? 0).toLocaleString('en-IN')} in the last ${data.days} days · ${(allTime ?? 0).toLocaleString('en-IN')} all time`
+              : 'Loading…'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <SegmentedControl
+            options={METRICS.map((x) => ({ value: x.key, label: x.label }))}
+            value={metric}
+            onChange={setMetric}
+          />
+          <SegmentedControl
+            options={DAY_RANGES.map((r) => ({ value: r.days, label: r.label }))}
+            value={days}
+            onChange={setDays}
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <ChartCard
+          title={`${m.label} per day`}
+          subtitle={peak && peak[m.perDay] > 0 ? `Peak ${peak[m.perDay].toLocaleString('en-IN')} on ${shortDate(peak.date)}` : undefined}
+        >
+          <LineAreaChart points={perDay} valueLabel={m.label.toLowerCase()} />
+        </ChartCard>
+
+        <ChartCard title={`Cumulative ${m.label.toLowerCase()}`} subtitle="Running total across the same window">
+          <LineAreaChart points={running} valueLabel="total" />
+        </ChartCard>
+      </div>
     </div>
   );
 }
@@ -304,6 +424,8 @@ export default function MulticityRegistrations() {
           {downloading === 'csv' ? 'Preparing…' : 'Export CSV'}
         </button>
       </div>
+
+      <DailyRegistrations filters={filters} />
 
       {/* Results */}
       {error && (

@@ -323,6 +323,15 @@ export const api = {
     }).then(handleResponse);
   },
 
+  // Per-day registrations and participants for the same filters, for the chart.
+  getCompiDaily: (filters = {}, days = 30) => {
+    const params = compiFilterParams(filters);
+    params.set('days', days);
+    return fetch(`${BASE_URL}/compi/daily?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
   getCompiRegistrations: (page = 1, filters = {}) => {
     const params = compiFilterParams(filters);
     params.set('page', page);

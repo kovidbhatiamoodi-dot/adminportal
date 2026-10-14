@@ -3,6 +3,20 @@ import { api } from '../api';
 import StatCard from '../components/StatCard';
 import RegistrationAnalytics from '../components/RegistrationAnalytics';
 
+// A student can correct their own details once. The row always shows the
+// current values; the ones from before the edit are kept on the record and shown
+// in the badge tooltip (and in the CSV export).
+const previousInfoText = (user) => {
+  const edit = user.info_edit_history?.[0];
+  if (!edit?.previous) return '';
+  const when = edit.edited_at ? new Date(edit.edited_at).toISOString().split('T')[0] : '';
+  const lines = Object.entries(edit.previous).map(([key, value]) => {
+    const shown = key === 'dob' && value ? String(value).split('T')[0] : (value ?? '');
+    return `${key}: ${shown}`;
+  });
+  return `Edited on ${when}. Before the edit:\n${lines.join('\n')}`;
+};
+
 // ─── CSV helpers (for current-page download) ─────────────────────────────────
 const CSV_FIELDS = [
   { key: 'mi_no',            label: 'MI No' },
@@ -23,6 +37,8 @@ const CSV_FIELDS = [
   { key: 'referred_by',      label: 'Referred By' },
   { key: 'instagram_handle', label: 'Instagram' },
   { key: 'createdAt',        label: 'Registered At' },
+  { key: 'info_edited_at',   label: 'Info Edited On' },
+  { key: 'previous_info',    label: 'Previous Info (before edit)' },
 ];
 
 const escapeCSV = (val) => {
@@ -36,8 +52,18 @@ const buildCSV = (users) => {
   const rows = users.map((u) =>
     CSV_FIELDS.map((f) => {
       const val = u[f.key];
-      if (f.key === 'dob' || f.key === 'createdAt') {
+      if (f.key === 'dob' || f.key === 'createdAt' || f.key === 'info_edited_at') {
         return escapeCSV(val ? new Date(val).toISOString().split('T')[0] : '');
+      }
+      if (f.key === 'previous_info') {
+        const before = u.info_edit_history?.[0]?.previous;
+        return escapeCSV(
+          before
+            ? Object.entries(before)
+                .map(([k, v]) => `${k}: ${k === 'dob' && v ? String(v).split('T')[0] : (v ?? '')}`)
+                .join('; ')
+            : '',
+        );
       }
       if (f.key === 'referred_by') {
         return escapeCSV(val ? `${val.full_name} (${val.mi_no})` : '');
@@ -491,6 +517,14 @@ export default function Dashboard() {
                           className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10"
                         />
                         <span className="text-white font-medium whitespace-nowrap">{user.full_name}</span>
+                        {user.info_edited_at && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 cursor-help whitespace-nowrap"
+                            title={previousInfoText(user) || 'Info edited by the student'}
+                          >
+                            info edited
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-300 text-xs whitespace-nowrap">{user.email}</td>

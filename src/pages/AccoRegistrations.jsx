@@ -499,10 +499,10 @@ export default function AccoRegistrations() {
               scrolls inside its own container so the page never scrolls
               sideways on a narrow screen. */}
           <div className="bg-[#111118] border border-white/[0.07] rounded-2xl overflow-x-auto">
-            <table className="w-full text-sm min-w-[980px]">
+            <table className="w-full text-sm min-w-[1080px]">
               <thead>
                 <tr className="border-b border-white/[0.07] text-left">
-                  {['Student', 'Contact', 'College', 'City', 'Year', 'Type', 'Status', 'Registered'].map((h) => (
+                  {['Student', 'Contact', 'College', 'City', 'Year', 'ID proofs', 'Type', 'Status', 'Registered'].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-[10px] uppercase tracking-wider text-slate-500 font-semibold whitespace-nowrap"
@@ -535,6 +535,36 @@ export default function AccoRegistrations() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
                       {a.year_of_study ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs whitespace-nowrap">
+                      {/* Drive links the student gave at registration. Rows from
+                          before the links were asked for have neither. */}
+                      {a.college_id_link || a.gov_id_link ? (
+                        <div className="flex flex-col gap-1">
+                          {[
+                            ['College ID', a.college_id_link],
+                            ['Gov ID', a.gov_id_link],
+                          ].map(([label, href]) =>
+                            href ? (
+                              <a
+                                key={label}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-amber-300 hover:underline"
+                              >
+                                {label} ↗
+                              </a>
+                            ) : (
+                              <span key={label} className="text-slate-600">
+                                {label} —
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap">
                       <select
