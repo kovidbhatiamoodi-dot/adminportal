@@ -83,6 +83,17 @@ const compiFilterParams = (filters = {}) => {
   return params;
 };
 
+// Competitions-portal registrations: list, stats and both exports share these.
+const GENRE_FILTER_KEYS = ['search', 'genre', 'competition', 'status'];
+
+const genreFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of GENRE_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
 // Same idea as COMPI_FILTER_KEYS, for the PR portal applications: the list,
 // the stats and the export must agree on the filters or the CSV stops matching
 // the screen it was exported from.
@@ -352,4 +363,29 @@ export const api = {
   // the browser to do what the backend can already do in one pass.
   exportCompiRegistrationsExcel: (filters = {}) =>
     fetchBlob(`${BASE_URL}/compi/registrations/export-excel?${compiFilterParams(filters)}`),
+
+  // ── Competitions portal (/competitions) registrations ─────────────────
+  // compi and superadmin only; informal, admin and coordinator get a 403. A different collection, so a different set of
+  // filters (genre, not city).
+  getGenreRegistrations: (page = 1, filters = {}) => {
+    const params = genreFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/genre-regs?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getGenreStats: (filters = {}) => {
+    const qs = genreFilterParams(filters).toString();
+    return fetch(`${BASE_URL}/genre-regs/stats${qs ? `?${qs}` : ''}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportGenreRegistrations: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/genre-regs/export?${genreFilterParams(filters)}`),
+
+  exportGenreRegistrationsExcel: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/genre-regs/export-excel?${genreFilterParams(filters)}`),
 };

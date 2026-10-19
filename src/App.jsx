@@ -6,6 +6,7 @@ import Tasks from './pages/Tasks';
 import TaskSubmissions from './pages/TaskSubmissions';
 import PrApprovals from './pages/PrApprovals';
 import MulticityRegistrations from './pages/MulticityRegistrations';
+import CompiPortalRegistrations from './pages/CompiPortalRegistrations';
 import PrPortalRegistrations from './pages/PrPortalRegistrations';
 import AccoRegistrations from './pages/AccoRegistrations';
 import ClApplications from './pages/ClApplications';
@@ -26,14 +27,18 @@ import { api } from './api';
 // 'acco' (accommodation registrations, hospitality's sheet) follows the same rule,
 // and so does 'cl' (Contingent Leader applications from the /cl portal).
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'multicity'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'multicity', 'compi-portal'],
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl'],
   coordinator: ['submissions'],
   // compi and informal open the SAME page. They are not the same data: the
   // backend scopes every multicity query by role, so compi gets everything
   // except the three informal competitions and informal gets only those. The
   // page cannot tell the difference, and does not need to.
-  compi: ['multicity'],
+  //
+  // 'compi-portal' (registrations from the /competitions page) is compi and
+  // superadmin only. informal and admin are left off, and the backend refuses
+  // them.
+  compi: ['multicity', 'compi-portal'],
   informal: ['multicity'],
 };
 
@@ -48,6 +53,7 @@ const PAGE_TITLES = {
   cl:          '🧭 Contingent Leader Applications',
   threads:     '💬 Thread Moderation',
   multicity:   '📍 Multicity Registrations',
+  'compi-portal': '🏆 Competitions Portal Registrations',
 };
 
 const ROLE_LABELS = {
@@ -198,6 +204,7 @@ export default function App() {
           {page === 'acco' && <AccoRegistrations />}
           {page === 'cl' && <ClApplications />}
           {page === 'multicity' && <MulticityRegistrations />}
+          {page === 'compi-portal' && <CompiPortalRegistrations />}
         </div>
       </main>
     </div>

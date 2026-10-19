@@ -55,6 +55,16 @@ const navItems = [
     ),
   },
   {
+    // Registrations from the /competitions page, not the multicity ones above.
+    id: 'compi-portal',
+    label: 'Compi Portal Regs',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-18h10v5a5 5 0 01-10 0V3zM7 5H4v1a3 3 0 003 3m10-4h3v1a3 3 0 01-3 3" />
+      </svg>
+    ),
+  },
+  {
     // Sits one line above "PR Approvals", which is a different queue
     // entirely, so the label has to carry that distinction on its own.
     id: 'pr-portal',
@@ -123,7 +133,7 @@ const ROLE_BRANDING = {
   compi: {
     title: 'Multicity Compi',
     fallbackUser: 'Compi',
-    access: 'Multicity regs — excl. informals',
+    access: 'Multicity (excl. informals) + Compi portal',
     logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
     name: 'text-rose-300',
   },
