@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
+import { ChartCard, LineAreaChart, HBarChart } from '../components/Charts';
 
 // Registrations from the /competitions page on the CCP site — not the multicity
 // ones (MulticityRegistrations.jsx), which are a different collection and shape.
@@ -65,6 +66,121 @@ function GenreBreakdown({ genres, activeGenre, onPick }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+const RANGES = [
+  { days: 7, label: '7D' },
+  { days: 30, label: '30D' },
+  { days: 90, label: '90D' },
+];
+
+const TOP_N = 10;
+
+// Graphs under the same filters as the list and tiles. Genre and competition
+// bars come from the stats already loaded; the trend lines, colleges and team
+// sizes need their own endpoint (and their own range).
+function CompiAnalytics({ stats, filters }) {
+  const [days, setDays] = useState(30);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const { search, genre, competition } = filters;
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api.getGenreAnalytics(days, { search, genre, competition })
+      .then((res) => { if (!cancelled) setData(res); })
+      .catch((err) => { if (!cancelled) setError(err.message || 'Could not load graphs'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [days, search, genre, competition]);
+
+  if (error) {
+    return (
+      <div className="bg-[#111118] border border-red-500/20 rounded-2xl p-5">
+        <p className="text-sm text-red-400">Graphs unavailable: {error}</p>
+      </div>
+    );
+  }
+
+  const daily = data?.daily ?? [];
+  const dailyPts = daily.map((d) => ({ date: d.date, value: d.count }));
+  const cumPts = daily.map((d) => ({ date: d.date, value: d.cumulative }));
+  const peak = daily.reduce((best, d) => (d.count > (best?.count ?? -1) ? d : best), null);
+
+  const genreBars = (stats?.genres ?? [])
+    .map((g) => ({ label: g.name, count: g.participants }));
+  const competitionBars = (stats?.competitions ?? [])
+    .slice()
+    .sort((a, b) => b.participants - a.participants)
+    .slice(0, TOP_N)
+    .map((c) => ({ label: c.name, count: c.participants }));
+  const teamBars = (data?.teamSizes ?? [])
+    .map((t) => ({ label: t.size === 1 ? 'Solo' : `Team of ${t.size}`, count: t.count }));
+
+  return (
+    <div className={`transition-opacity ${loading && !data ? 'opacity-40' : 'opacity-100'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Registration trends</h2>
+          <p className="text-xs text-slate-500">
+            {data
+              ? `${(data.periodTotal ?? 0).toLocaleString('en-IN')} registrations in the last ${data.days} days`
+              : 'Loading…'}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+          {RANGES.map((r) => (
+            <button
+              key={r.days}
+              type="button"
+              disabled={loading}
+              onClick={() => setDays(r.days)}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+                days === r.days ? 'bg-rose-600/30 text-rose-200' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+        <ChartCard
+          title="New registrations per day"
+          subtitle={peak && peak.count > 0
+            ? `Peak ${peak.count.toLocaleString('en-IN')} on ${new Date(`${peak.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`
+            : undefined}
+        >
+          <LineAreaChart points={dailyPts} valueLabel="registrations" />
+        </ChartCard>
+        <ChartCard title="Cumulative registrations" subtitle="Running total across the same window">
+          <LineAreaChart points={cumPts} valueLabel="total" />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+        <ChartCard title="Participants by genre" subtitle="Leaders plus team mates">
+          <HBarChart items={genreBars} emptyLabel="No registrations yet" />
+        </ChartCard>
+        <ChartCard title="Top competitions" subtitle={`By participants · top ${TOP_N}`}>
+          <HBarChart items={competitionBars} emptyLabel="No registrations yet" />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <ChartCard title="Top colleges" subtitle={`By registrations (team leader's college) · top ${TOP_N}`}>
+          <HBarChart items={data?.topColleges ?? []} emptyLabel="No college data" />
+        </ChartCard>
+        <ChartCard title="Team size" subtitle="Registrations by participants per team">
+          <HBarChart items={teamBars} emptyLabel="No registrations yet" />
+        </ChartCard>
       </div>
     </div>
   );
@@ -223,6 +339,8 @@ export default function CompiPortalRegistrations() {
         activeGenre={filters.genre}
         onPick={(genre) => applyFilter({ genre, competition: '' })}
       />
+
+      <CompiAnalytics stats={stats} filters={filters} />
 
       {/* Filters */}
       <div className="bg-[#111118] border border-white/[0.07] rounded-2xl p-4 flex flex-wrap gap-3 items-center">

@@ -383,6 +383,14 @@ export const api = {
     }).then(handleResponse);
   },
 
+  getGenreAnalytics: (days = 30, filters = {}) => {
+    const params = genreFilterParams(filters);
+    params.set('days', days);
+    return fetch(`${BASE_URL}/genre-regs/analytics?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
   exportGenreRegistrations: (filters = {}) =>
     fetchBlob(`${BASE_URL}/genre-regs/export?${genreFilterParams(filters)}`),
 
