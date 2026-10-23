@@ -322,6 +322,46 @@ export const api = {
   exportAccoRegistrations: (filters = {}) =>
     fetchBlob(`${BASE_URL}/acco-registrations/export?${accoFilterParams(filters)}`),
 
+  // ── Aadhaar verification (superadmin + admin) ─────────────────────────
+  // The eligible email list and who on it has verified their Aadhaar. 403 for
+  // every other role. The backend relays these to the Aadhaar service.
+  getAadhaarStats: () =>
+    fetch(`${BASE_URL}/aadhaar/stats`, { headers: headers() }).then(handleResponse),
+
+  getAadhaarEmails: ({ q = '', status = 'all', skip = 0, limit = 50 } = {}) => {
+    const params = new URLSearchParams({ status, skip, limit });
+    if (q.trim()) params.set('q', q.trim());
+    return fetch(`${BASE_URL}/aadhaar/emails?${params}`, { headers: headers() }).then(handleResponse);
+  },
+
+  // Every failed attempt of one person, with what differed (CCP vs Aadhaar).
+  getAadhaarAttempts: (email) =>
+    fetch(`${BASE_URL}/aadhaar/attempts?email=${encodeURIComponent(email)}`, { headers: headers() }).then(handleResponse),
+
+  // Not `headers()`: it forces a JSON content type, which would break the
+  // multipart boundary the browser sets for a FormData body.
+  uploadAadhaarEmails: (file) => {
+    const body = new FormData();
+    body.append('file', file);
+    return fetch(`${BASE_URL}/aadhaar/emails/upload`, {
+      method: 'POST',
+      headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      body,
+    }).then(handleResponse);
+  },
+
+  removeAadhaarEmail: (email) =>
+    fetch(`${BASE_URL}/aadhaar/emails?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+      headers: headers(),
+    }).then(handleResponse),
+
+  syncAadhaarWithHaven: () =>
+    fetch(`${BASE_URL}/aadhaar/haven-sync`, { method: 'POST', headers: headers() }).then(handleResponse),
+
+  exportAadhaarProgress: (status = 'all') =>
+    fetchBlob(`${BASE_URL}/aadhaar/export?status=${encodeURIComponent(status)}`),
+
   // ── Multicity competitions (compi role only) ──────────────────────────
   // These 403 for admin and coordinator tokens by design — the multicity
   // registrations belong to a different team. See admin.routes.js.
