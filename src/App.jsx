@@ -38,8 +38,8 @@ const PAGES_BY_ROLE = {
   //
   // 'compi-portal' (registrations from the /competitions page) is compi,
   // informal and superadmin only; admin is left off and the backend refuses it.
-  // Same split as multicity: informal sees only She's Got The Look and
-  // Mr & Ms Indigo there, compi sees everything else.
+  // Same split as multicity: informal sees only Hysteria, She's Got The
+  // Look and Mr & Ms Indigo there, compi sees everything else.
   compi: ['multicity', 'compi-portal'],
   informal: ['multicity', 'compi-portal'],
 };
