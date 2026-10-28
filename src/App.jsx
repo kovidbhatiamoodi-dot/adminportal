@@ -36,11 +36,12 @@ const PAGES_BY_ROLE = {
   // except the three informal competitions and informal gets only those. The
   // page cannot tell the difference, and does not need to.
   //
-  // 'compi-portal' (registrations from the /competitions page) is compi and
-  // superadmin only. informal and admin are left off, and the backend refuses
-  // them.
+  // 'compi-portal' (registrations from the /competitions page) is compi,
+  // informal and superadmin only; admin is left off and the backend refuses it.
+  // Same split as multicity: informal sees only She's Got The Look and
+  // Mr & Ms Indigo there, compi sees everything else.
   compi: ['multicity', 'compi-portal'],
-  informal: ['multicity'],
+  informal: ['multicity', 'compi-portal'],
 };
 
 const PAGE_TITLES = {

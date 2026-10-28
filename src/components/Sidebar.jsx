@@ -142,7 +142,7 @@ const ROLE_BRANDING = {
   compi: {
     title: 'Multicity Compi',
     fallbackUser: 'Compi',
-    access: 'Multicity (excl. informals) + Compi portal',
+    access: 'Multicity + Compi portal (excl. informals)',
     logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
     name: 'text-rose-300',
   },
@@ -152,7 +152,7 @@ const ROLE_BRANDING = {
   informal: {
     title: 'Multicity Informals',
     fallbackUser: 'Informals',
-    access: 'Hysteria · SGTL · Mr & Miss Indigo',
+    access: 'Hysteria · SGTL · Mr & Miss Indigo (multicity + Compi portal)',
     logo: 'from-violet-500 to-fuchsia-600 shadow-violet-500/30',
     name: 'text-violet-300',
   },
