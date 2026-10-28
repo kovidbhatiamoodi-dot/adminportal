@@ -152,7 +152,7 @@ const ROLE_BRANDING = {
   informal: {
     title: 'Multicity Informals',
     fallbackUser: 'Informals',
-    access: 'Hysteria · SGTL · Mr & Miss Indigo (multicity + Compi portal)',
+    access: 'Hysteria · SGTL · Mr & Miss Indigo · Cosplay · MIGT',
     logo: 'from-violet-500 to-fuchsia-600 shadow-violet-500/30',
     name: 'text-violet-300',
   },
