@@ -40,8 +40,11 @@ const PAGES_BY_ROLE = {
   // informal and superadmin only; admin is left off and the backend refuses it.
   // Same split as multicity: informal sees only Hysteria, She's Got The
   // Look, Mr & Ms Indigo, Cosplay and MI Got Talent there, compi sees everything else.
-  compi: ['multicity', 'compi-portal'],
-  informal: ['multicity', 'compi-portal'],
+  //
+  // The first entry is the landing page after sign-in (see applySession), so
+  // the compi-portal page leads and multicity is one tap away in the sidebar.
+  compi: ['compi-portal', 'multicity'],
+  informal: ['compi-portal', 'multicity'],
 };
 
 const PAGE_TITLES = {

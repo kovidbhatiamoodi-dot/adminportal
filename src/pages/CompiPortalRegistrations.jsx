@@ -71,6 +71,47 @@ function GenreBreakdown({ genres, activeGenre, onPick }) {
   );
 }
 
+// Competition-wise totals, same shape as the genre cards above and a filter just
+// like them. The stats' competition list ignores the competition filter itself,
+// so picking one never hides the others.
+function CompetitionBreakdown({ competitions, activeCompetition, onPick }) {
+  if (!competitions?.length) return null;
+
+  return (
+    <div className="bg-[#111118] border border-white/[0.07] rounded-2xl p-5">
+      <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
+        Competition-wise breakdown
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {competitions.map((c) => {
+          const active = activeCompetition === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onPick(active ? '' : c.id)}
+              className={`text-left rounded-xl border px-3 py-2 transition-colors ${
+                active
+                  ? 'border-rose-500/40 bg-rose-500/[0.08]'
+                  : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]'
+              }`}
+            >
+              <p className={`text-sm font-medium ${active ? 'text-rose-200' : 'text-slate-200'}`}>
+                {c.name}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                <span className="text-slate-300 font-semibold">{c.participants}</span>
+                {' '}{c.participants === 1 ? 'participant' : 'participants'}
+                <span className="text-slate-600"> · {plural(c.count, 'team')}</span>
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const RANGES = [
   { days: 7, label: '7D' },
   { days: 30, label: '30D' },
@@ -79,11 +120,38 @@ const RANGES = [
 
 const TOP_N = 10;
 
+// Same two lenses as the multicity graph: teams registered, or people in them.
+const METRICS = [
+  { key: 'registrations', label: 'Registrations', perDay: 'count', total: 'cumulative', noun: 'registrations' },
+  { key: 'participants', label: 'Participants', perDay: 'participants', total: 'cumulativeParticipants', noun: 'participants' },
+];
+
+function SegmentedControl({ options, value, onChange, disabled }) {
+  return (
+    <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(o.value)}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+            value === o.value ? 'bg-rose-600/30 text-rose-200' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Graphs under the same filters as the list and tiles. Genre and competition
 // bars come from the stats already loaded; the trend lines, colleges and team
 // sizes need their own endpoint (and their own range).
 function CompiAnalytics({ stats, filters }) {
   const [days, setDays] = useState(30);
+  const [metric, setMetric] = useState('registrations');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -108,10 +176,12 @@ function CompiAnalytics({ stats, filters }) {
     );
   }
 
+  const m = METRICS.find((x) => x.key === metric);
   const daily = data?.daily ?? [];
-  const dailyPts = daily.map((d) => ({ date: d.date, value: d.count }));
-  const cumPts = daily.map((d) => ({ date: d.date, value: d.cumulative }));
-  const peak = daily.reduce((best, d) => (d.count > (best?.count ?? -1) ? d : best), null);
+  const dailyPts = daily.map((d) => ({ date: d.date, value: d[m.perDay] }));
+  const cumPts = daily.map((d) => ({ date: d.date, value: d[m.total] }));
+  const peak = daily.reduce((best, d) => (d[m.perDay] > (best?.[m.perDay] ?? -1) ? d : best), null);
+  const inWindow = daily.reduce((sum, d) => sum + d[m.perDay], 0);
 
   const genreBars = (stats?.genres ?? [])
     .map((g) => ({ label: g.name, count: g.participants }));
@@ -130,37 +200,35 @@ function CompiAnalytics({ stats, filters }) {
           <h2 className="text-sm font-semibold text-white">Registration trends</h2>
           <p className="text-xs text-slate-500">
             {data
-              ? `${(data.periodTotal ?? 0).toLocaleString('en-IN')} registrations in the last ${data.days} days`
+              ? `${inWindow.toLocaleString('en-IN')} ${m.noun} in the last ${data.days} days`
               : 'Loading…'}
           </p>
         </div>
-        <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-0.5">
-          {RANGES.map((r) => (
-            <button
-              key={r.days}
-              type="button"
-              disabled={loading}
-              onClick={() => setDays(r.days)}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
-                days === r.days ? 'bg-rose-600/30 text-rose-200' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <SegmentedControl
+            options={METRICS.map((x) => ({ value: x.key, label: x.label }))}
+            value={metric}
+            onChange={setMetric}
+          />
+          <SegmentedControl
+            options={RANGES.map((r) => ({ value: r.days, label: r.label }))}
+            value={days}
+            onChange={setDays}
+            disabled={loading}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <ChartCard
-          title="New registrations per day"
-          subtitle={peak && peak.count > 0
-            ? `Peak ${peak.count.toLocaleString('en-IN')} on ${new Date(`${peak.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`
+          title={`${m.label} per day`}
+          subtitle={peak && peak[m.perDay] > 0
+            ? `Peak ${peak[m.perDay].toLocaleString('en-IN')} on ${new Date(`${peak.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`
             : undefined}
         >
-          <LineAreaChart points={dailyPts} valueLabel="registrations" />
+          <LineAreaChart points={dailyPts} valueLabel={m.noun} />
         </ChartCard>
-        <ChartCard title="Cumulative registrations" subtitle="Running total across the same window">
+        <ChartCard title={`Cumulative ${m.noun}`} subtitle="Running total across the same window">
           <LineAreaChart points={cumPts} valueLabel="total" />
         </ChartCard>
       </div>
@@ -326,9 +394,11 @@ export default function CompiPortalRegistrations() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <StatTile label="Registrations" value={stats?.registrations ?? '—'} hint={filterHint} />
-        <StatTile label="Participants" value={stats?.participants ?? '—'} hint={filterHint} />
+        <StatTile label="Participants" value={stats?.participants ?? '—'} hint={filterHint ?? 'seats across all teams'} />
+        {/* A person on two teams is two participants above but one here. */}
+        <StatTile label="Unique people" value={stats?.uniqueParticipants ?? '—'} hint={filterHint ?? 'distinct MI IDs'} />
         <StatTile label="Genres" value={stats?.genreCount ?? '—'} hint={filterHint} />
         <StatTile label="Competitions" value={stats?.competitionCount ?? '—'} hint={filterHint} />
         <StatTile label="Submissions" value={stats?.submissions ?? '—'} hint={filterHint} />
@@ -338,6 +408,12 @@ export default function CompiPortalRegistrations() {
         genres={stats?.genres}
         activeGenre={filters.genre}
         onPick={(genre) => applyFilter({ genre, competition: '' })}
+      />
+
+      <CompetitionBreakdown
+        competitions={stats?.competitions}
+        activeCompetition={filters.competition}
+        onPick={(competition) => applyFilter({ competition })}
       />
 
       <CompiAnalytics stats={stats} filters={filters} />

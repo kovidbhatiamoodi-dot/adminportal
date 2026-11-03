@@ -45,22 +45,23 @@ const navItems = [
     ),
   },
   {
+    // Registrations from the /competitions page. Listed before multicity: it is
+    // the compi team's main page and the one they land on after signing in.
+    id: 'compi-portal',
+    label: 'Compi Portal Regs',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-18h10v5a5 5 0 01-10 0V3zM7 5H4v1a3 3 0 003 3m10-4h3v1a3 3 0 01-3 3" />
+      </svg>
+    ),
+  },
+  {
     id: 'multicity',
     label: 'Multicity Regs',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  {
-    // Registrations from the /competitions page, not the multicity ones above.
-    id: 'compi-portal',
-    label: 'Compi Portal Regs',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-18h10v5a5 5 0 01-10 0V3zM7 5H4v1a3 3 0 003 3m10-4h3v1a3 3 0 01-3 3" />
       </svg>
     ),
   },
@@ -142,7 +143,7 @@ const ROLE_BRANDING = {
   compi: {
     title: 'Multicity Compi',
     fallbackUser: 'Compi',
-    access: 'Multicity + Compi portal (excl. informals)',
+    access: 'Compi portal + Multicity (excl. informals)',
     logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
     name: 'text-rose-300',
   },
