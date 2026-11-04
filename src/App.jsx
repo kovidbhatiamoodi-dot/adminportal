@@ -44,6 +44,8 @@ const PAGES_BY_ROLE = {
   // The first entry is the landing page after sign-in (see applySession), so
   // the compi-portal page leads and multicity is one tap away in the sidebar.
   compi: ['compi-portal', 'multicity'],
+  // The coordinators' admin: the Aadhaar verification page and nothing else.
+  coordadmin: ['aadhaar'],
   informal: ['compi-portal', 'multicity'],
 };
 
@@ -68,6 +70,7 @@ const ROLE_LABELS = {
   coordinator: 'Coordinator',
   compi: 'Multicity Compi',
   informal: 'Informals',
+  coordadmin: 'Coordinators Admin',
 };
 
 export default function App() {

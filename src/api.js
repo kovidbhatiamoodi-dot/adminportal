@@ -322,7 +322,7 @@ export const api = {
   exportAccoRegistrations: (filters = {}) =>
     fetchBlob(`${BASE_URL}/acco-registrations/export?${accoFilterParams(filters)}`),
 
-  // ── Aadhaar verification (superadmin + admin) ─────────────────────────
+  // ── Aadhaar verification (superadmin + admin + coordadmin) ─────────────────────────
   // The eligible email list and who on it has verified their Aadhaar. 403 for
   // every other role. The backend relays these to the Aadhaar service.
   getAadhaarStats: () =>
@@ -358,6 +358,10 @@ export const api = {
 
   syncAadhaarWithHaven: () =>
     fetch(`${BASE_URL}/aadhaar/haven-sync`, { method: 'POST', headers: headers() }).then(handleResponse),
+
+  // The person's stored e-Aadhaar PDF (404 when none was kept).
+  downloadAadhaarDocument: (email) =>
+    fetchBlob(`${BASE_URL}/aadhaar/document?email=${encodeURIComponent(email)}`),
 
   exportAadhaarProgress: (status = 'all') =>
     fetchBlob(`${BASE_URL}/aadhaar/export?status=${encodeURIComponent(status)}`),

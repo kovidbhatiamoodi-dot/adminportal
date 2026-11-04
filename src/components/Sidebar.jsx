@@ -147,6 +147,13 @@ const ROLE_BRANDING = {
     logo: 'from-rose-500 to-orange-600 shadow-rose-500/30',
     name: 'text-rose-300',
   },
+  coordadmin: {
+    title: 'Coordinators Admin',
+    fallbackUser: 'Coord Admin',
+    access: 'Aadhaar verification only',
+    logo: 'from-sky-500 to-cyan-600 shadow-sky-500/30',
+    name: 'text-sky-300',
+  },
   // Its own colour for the same reason compi has one: informals sees the same
   // screen as compi over a different slice of the same collection, and the one
   // thing that must never be ambiguous is which slice is on screen.

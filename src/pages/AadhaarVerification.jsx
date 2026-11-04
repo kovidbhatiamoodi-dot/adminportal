@@ -196,6 +196,17 @@ export default function AadhaarVerification() {
     }
   };
 
+  const onDownload = async (email) => {
+    setBusy(`doc:${email}`); setError('');
+    try {
+      triggerDownload(await api.downloadAadhaarDocument(email), `aadhaar-${email.replace(/[^a-z0-9._-]+/gi, '_')}.pdf`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
   const onSync = async () => {
     setBusy('sync'); setError(''); setNotice('');
     try {
@@ -327,6 +338,16 @@ export default function AadhaarVerification() {
                           className="text-xs text-indigo-300 hover:text-indigo-200 mr-3"
                         >
                           {openEmail === row.email ? 'Hide details' : 'What differed?'}
+                        </button>
+                      )}
+                      {row.verified && (
+                        <button
+                          type="button"
+                          disabled={busy === `doc:${row.email}`}
+                          onClick={() => onDownload(row.email)}
+                          className="text-xs text-emerald-300 hover:text-emerald-200 disabled:opacity-50 mr-3"
+                        >
+                          {busy === `doc:${row.email}` ? 'Downloading…' : 'Download Aadhaar'}
                         </button>
                       )}
                       <button
