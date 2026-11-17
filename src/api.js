@@ -107,6 +107,17 @@ const prFilterParams = (filters = {}) => {
   return params;
 };
 
+// MI Creator (influencer) registrations: list, stats and export share these.
+const INFLUENCER_FILTER_KEYS = ['search', 'status', 'category'];
+
+const influencerFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of INFLUENCER_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
 // Accommodation registrations: list, stats and export must agree on the
 // filters, same as the PR applications.
 const ACCO_FILTER_KEYS = ['search', 'status', 'type', 'college'];
@@ -285,6 +296,37 @@ export const api = {
 
   updateClApplicationStatus: (id, status) =>
     fetch(`${BASE_URL}/cl-applications/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ status }),
+    }).then(handleResponse),
+
+  // ── MI Creator registrations (superadmin + admin + media) ─────────────
+  // 403 for coordinator, compi, informal and coordadmin. Same filters
+  // (search / status / category) on the list, the stats and the CSV, so the tiles
+  // and the file describe the rows the list is showing.
+  getInfluencerRegistrations: (page = 1, filters = {}) => {
+    const params = influencerFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/influencer-registrations?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getInfluencerStats: (filters = {}, days = 30) => {
+    const params = influencerFilterParams(filters);
+    params.set('days', days);
+    return fetch(`${BASE_URL}/influencer-registrations/stats?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportInfluencerRegistrations: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/influencer-registrations/export?${influencerFilterParams(filters)}`),
+
+  updateInfluencerStatus: (id, status) =>
+    fetch(`${BASE_URL}/influencer-registrations/${encodeURIComponent(id)}/status`, {
       method: 'PATCH',
       headers: headers(),
       body: JSON.stringify({ status }),

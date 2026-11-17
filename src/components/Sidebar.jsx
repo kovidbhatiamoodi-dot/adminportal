@@ -104,6 +104,15 @@ const navItems = [
     ),
   },
   {
+    id: 'influencer',
+    label: 'MI Creator Regs',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (
@@ -153,6 +162,13 @@ const ROLE_BRANDING = {
     access: 'Aadhaar verification only',
     logo: 'from-sky-500 to-cyan-600 shadow-sky-500/30',
     name: 'text-sky-300',
+  },
+  media: {
+    title: 'MI Creator Media',
+    fallbackUser: 'Media',
+    access: 'MI Creator registrations only',
+    logo: 'from-pink-500 to-rose-600 shadow-pink-500/30',
+    name: 'text-pink-300',
   },
   // Its own colour for the same reason compi has one: informals sees the same
   // screen as compi over a different slice of the same collection, and the one
