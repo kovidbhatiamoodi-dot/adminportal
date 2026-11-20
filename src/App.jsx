@@ -50,6 +50,10 @@ const PAGES_BY_ROLE = {
   informal: ['compi-portal', 'multicity'],
   // The media team: the MI Creator registrations and nothing else.
   media: ['influencer'],
+  // The Vogue team: the compi-portal page only, and the backend scopes every
+  // request on it down to Vogue's own rows (see genreScopeForRole in
+  // admin_genre.controller.js) — not even the multicity side.
+  vogue: ['compi-portal'],
 };
 
 const PAGE_TITLES = {
@@ -76,6 +80,7 @@ const ROLE_LABELS = {
   informal: 'Informals',
   coordadmin: 'Coordinators Admin',
   media: 'Media',
+  vogue: 'Vogue',
 };
 
 export default function App() {

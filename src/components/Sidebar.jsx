@@ -180,6 +180,15 @@ const ROLE_BRANDING = {
     logo: 'from-violet-500 to-fuchsia-600 shadow-violet-500/30',
     name: 'text-violet-300',
   },
+  // Vogue's own team: one competition's registrations, nothing else — not even
+  // the rest of the Competitions portal.
+  vogue: {
+    title: 'Vogue',
+    fallbackUser: 'Horizons',
+    access: 'Vogue registrations only',
+    logo: 'from-fuchsia-500 to-pink-600 shadow-fuchsia-500/30',
+    name: 'text-fuchsia-300',
+  },
 };
 
 export default function Sidebar({

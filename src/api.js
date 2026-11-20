@@ -451,8 +451,8 @@ export const api = {
     fetchBlob(`${BASE_URL}/compi/registrations/export-excel?${compiFilterParams(filters)}`),
 
   // ── Competitions portal (/competitions) registrations ─────────────────
-  // compi and superadmin only; informal, admin and coordinator get a 403. A different collection, so a different set of
-  // filters (genre, not city).
+  // compi, informal, vogue and superadmin; admin and coordinator get a 403.
+  // A different collection, so a different set of filters (genre, not city).
   getGenreRegistrations: (page = 1, filters = {}) => {
     const params = genreFilterParams(filters);
     params.set('page', page);
