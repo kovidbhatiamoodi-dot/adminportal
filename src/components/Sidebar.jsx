@@ -113,6 +113,15 @@ const navItems = [
     ),
   },
   {
+    id: 'pronites',
+    label: 'Livewire + Soulstrings',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (
@@ -188,6 +197,14 @@ const ROLE_BRANDING = {
     access: 'Vogue registrations only',
     logo: 'from-fuchsia-500 to-pink-600 shadow-fuchsia-500/30',
     name: 'text-fuchsia-300',
+  },
+  // The Pronites team: Livewire + Soulstrings registrations only.
+  pronites: {
+    title: 'Pronites',
+    fallbackUser: 'Pronites',
+    access: 'Livewire + Soulstrings only',
+    logo: 'from-violet-500 to-indigo-600 shadow-violet-500/30',
+    name: 'text-violet-300',
   },
 };
 

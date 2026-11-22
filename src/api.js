@@ -130,6 +130,17 @@ const accoFilterParams = (filters = {}) => {
   return params;
 };
 
+// Livewire + Soulstrings registrations: list, stats and export share these.
+const PRONITES_FILTER_KEYS = ['search', 'event', 'round'];
+
+const pronitesFilterParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  for (const key of PRONITES_FILTER_KEYS) {
+    if (filters[key]) params.set(key, filters[key]);
+  }
+  return params;
+};
+
 export const api = {
   login: (username, password) =>
     fetch(`${BASE_URL}/login`, {
@@ -331,6 +342,27 @@ export const api = {
       headers: headers(),
       body: JSON.stringify({ status }),
     }).then(handleResponse),
+
+  // ── Livewire + Soulstrings registrations (superadmin + pronites) ──────
+  // Read-only. 403 for every other role. Filters: event / round / search.
+  getPronitesRegistrations: (page = 1, filters = {}) => {
+    const params = pronitesFilterParams(filters);
+    params.set('page', page);
+    params.set('limit', 50);
+    return fetch(`${BASE_URL}/pronites-registrations?${params}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  getPronitesStats: (filters = {}) => {
+    const qs = pronitesFilterParams(filters).toString();
+    return fetch(`${BASE_URL}/pronites-registrations/stats${qs ? `?${qs}` : ''}`, {
+      headers: headers(),
+    }).then(handleResponse);
+  },
+
+  exportPronitesRegistrations: (filters = {}) =>
+    fetchBlob(`${BASE_URL}/pronites-registrations/export?${pronitesFilterParams(filters)}`),
 
   // ── Accommodation registrations (superadmin + admin) ──────────────────
   // 403 for coordinator, compi and informal — hospitality's sheet, not the

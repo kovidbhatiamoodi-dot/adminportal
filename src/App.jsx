@@ -12,6 +12,7 @@ import AccoRegistrations from './pages/AccoRegistrations';
 import ClApplications from './pages/ClApplications';
 import AadhaarVerification from './pages/AadhaarVerification';
 import InfluencerRegistrations from './pages/InfluencerRegistrations';
+import PronitesRegistrations from './pages/PronitesRegistrations';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -29,7 +30,7 @@ import { api } from './api';
 // 'acco' (accommodation registrations, hospitality's sheet) follows the same rule,
 // and so does 'cl' (Contingent Leader applications from the /cl portal).
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer', 'multicity', 'compi-portal'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer', 'multicity', 'compi-portal', 'pronites'],
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer'],
   coordinator: ['submissions'],
   // compi and informal open the SAME page. They are not the same data: the
@@ -54,6 +55,8 @@ const PAGES_BY_ROLE = {
   // request on it down to Vogue's own rows (see genreScopeForRole in
   // admin_genre.controller.js) — not even the multicity side.
   vogue: ['compi-portal'],
+  // The Pronites team: Livewire + Soulstrings registrations and nothing else.
+  pronites: ['pronites'],
 };
 
 const PAGE_TITLES = {
@@ -70,6 +73,7 @@ const PAGE_TITLES = {
   threads:     '💬 Thread Moderation',
   multicity:   '📍 Multicity Registrations',
   'compi-portal': '🏆 Competitions Portal Registrations',
+  pronites:    '🎸 Livewire + Soulstrings Registrations',
 };
 
 const ROLE_LABELS = {
@@ -81,6 +85,7 @@ const ROLE_LABELS = {
   coordadmin: 'Coordinators Admin',
   media: 'Media',
   vogue: 'Vogue',
+  pronites: 'Pronites',
 };
 
 export default function App() {
@@ -226,6 +231,7 @@ export default function App() {
           {page === 'influencer' && <InfluencerRegistrations />}
           {page === 'multicity' && <MulticityRegistrations />}
           {page === 'compi-portal' && <CompiPortalRegistrations />}
+          {page === 'pronites' && <PronitesRegistrations />}
         </div>
       </main>
     </div>
