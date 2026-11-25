@@ -122,6 +122,15 @@ const navItems = [
     ),
   },
   {
+    id: 'points',
+    label: 'Add Points',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6m15 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     id: 'pr',
     label: 'PR Approvals',
     icon: (
@@ -205,6 +214,14 @@ const ROLE_BRANDING = {
     access: 'Livewire + Soulstrings only',
     logo: 'from-violet-500 to-indigo-600 shadow-violet-500/30',
     name: 'text-violet-300',
+  },
+  // The points team: adds points by MI number, nothing else.
+  points: {
+    title: 'Points',
+    fallbackUser: 'Points',
+    access: 'Add points only',
+    logo: 'from-emerald-500 to-teal-600 shadow-emerald-500/30',
+    name: 'text-emerald-300',
   },
 };
 

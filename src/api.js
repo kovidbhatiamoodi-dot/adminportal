@@ -343,6 +343,26 @@ export const api = {
       body: JSON.stringify({ status }),
     }).then(handleResponse),
 
+  // ── Add points by MI number (superadmin + points) ─────────────────────
+  // entries: [{ mi_no, points }], at most 500 per call. On a 400 the thrown
+  // error carries `invalid` (the rows the server refused) so the page can show
+  // them; nothing is added when any row is invalid.
+  awardPoints: async (entries, source = 'manual') => {
+    const res = await fetch(`${BASE_URL}/points/award`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ entries, source }),
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (!res.ok && ct.includes('application/json')) {
+      const json = await res.json().catch(() => ({}));
+      const err = new Error(json.message || `Request failed (${res.status})`);
+      err.invalid = json.data?.invalid ?? [];
+      throw err;
+    }
+    return handleResponse(res);
+  },
+
   // ── Livewire + Soulstrings registrations (superadmin + pronites) ──────
   // Read-only. 403 for every other role. Filters: event / round / search.
   getPronitesRegistrations: (page = 1, filters = {}) => {

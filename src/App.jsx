@@ -13,6 +13,7 @@ import ClApplications from './pages/ClApplications';
 import AadhaarVerification from './pages/AadhaarVerification';
 import InfluencerRegistrations from './pages/InfluencerRegistrations';
 import PronitesRegistrations from './pages/PronitesRegistrations';
+import AddPoints from './pages/AddPoints';
 import Sidebar from './components/Sidebar';
 import { api } from './api';
 
@@ -30,7 +31,7 @@ import { api } from './api';
 // 'acco' (accommodation registrations, hospitality's sheet) follows the same rule,
 // and so does 'cl' (Contingent Leader applications from the /cl portal).
 const PAGES_BY_ROLE = {
-  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer', 'multicity', 'compi-portal', 'pronites'],
+  superadmin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer', 'multicity', 'compi-portal', 'pronites', 'points'],
   admin: ['dashboard', 'users', 'threads', 'tasks', 'submissions', 'pr', 'pr-portal', 'acco', 'cl', 'aadhaar', 'influencer'],
   coordinator: ['submissions'],
   // compi and informal open the SAME page. They are not the same data: the
@@ -57,6 +58,9 @@ const PAGES_BY_ROLE = {
   vogue: ['compi-portal'],
   // The Pronites team: Livewire + Soulstrings registrations and nothing else.
   pronites: ['pronites'],
+  // The points team: adding points by MI number, and nothing else — no
+  // registrations, counts or exports.
+  points: ['points'],
 };
 
 const PAGE_TITLES = {
@@ -74,6 +78,7 @@ const PAGE_TITLES = {
   multicity:   '📍 Multicity Registrations',
   'compi-portal': '🏆 Competitions Portal Registrations',
   pronites:    '🎸 Livewire + Soulstrings Registrations',
+  points:      '➕ Add Points',
 };
 
 const ROLE_LABELS = {
@@ -86,6 +91,7 @@ const ROLE_LABELS = {
   media: 'Media',
   vogue: 'Vogue',
   pronites: 'Pronites',
+  points: 'Points',
 };
 
 export default function App() {
@@ -232,6 +238,7 @@ export default function App() {
           {page === 'multicity' && <MulticityRegistrations />}
           {page === 'compi-portal' && <CompiPortalRegistrations />}
           {page === 'pronites' && <PronitesRegistrations />}
+          {page === 'points' && <AddPoints />}
         </div>
       </main>
     </div>
